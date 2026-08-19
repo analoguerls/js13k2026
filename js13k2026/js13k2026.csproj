@@ -8,6 +8,10 @@
 
   <ItemGroup>
     <Folder Include="dist\" />
+    <Folder Include="modules\" />
+    <Folder Include="assets\" />
+    <Folder Include="src\images\" />
+    <Folder Include="src\css\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 

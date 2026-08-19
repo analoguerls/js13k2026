@@ -1,0 +1,33 @@
+{
+  "name": "js13k2026",
+  "version": "1.0.0",
+  "description": "js13k 2026 Entry",
+  "scripts": {
+    "build": "gulp build",
+    "watch": "gulp",
+    "optimize-zip": "advzip -z zip/game.zip"
+  },
+  "type": "module",
+  "author": "Randall Spence",
+  "license": "MIT",
+  "dependencies": {
+    "kontra": "^10.0.2"
+  },
+  "devDependencies": {
+    "advzip-bin": "^2.0.0",
+    "eslint": "^10.8.1",
+    "gulp": "^5.0.1",
+    "gulp-check-filesize": "^2.0.1",
+    "gulp-clean-css": "^4.3.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-html-replace": "^1.6.2",
+    "gulp-imagemin": "^9.2.0",
+    "gulp-minify-html": "^1.0.6",
+    "gulp-replace": "^1.1.4",
+    "gulp-rimraf": "^1.0.0",
+    "gulp-terser": "^2.1.0",
+    "gulp-zip": "^6.1.0",
+    "rollup": "^4.62.4",
+    "rollup-plugin-kontra": "^1.0.1"
+  }
+}
