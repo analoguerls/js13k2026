@@ -1,4 +1,4 @@
-﻿/* eslint-disable func-style, new-cap, no-extra-parens, no-mixed-operators */
+/* eslint-disable func-style, new-cap, no-extra-parens, no-mixed-operators */
 
 import {
     GameLoop,
@@ -7,7 +7,7 @@ import {
     init,
     initKeys,
     onKey
-} from '../../node_modules/kontra/kontra';
+} from 'https://unpkg.com/kontra@10.0.2/kontra.mjs';
 
 const {
         canvas,
