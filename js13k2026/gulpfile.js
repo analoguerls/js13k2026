@@ -1,4 +1,5 @@
 /// <binding BeforeBuild='copyToRoot' Clean='copyToRoot' />
+
 import checkFileSize from 'gulp-check-filesize';
 import concat from 'gulp-concat';
 import deleteFiles from 'gulp-rimraf';
