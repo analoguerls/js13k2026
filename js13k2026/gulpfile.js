@@ -63,19 +63,23 @@ gulp.task('optimizeImages', () => gulp.
     pipe(imagemin()).
     pipe(gulp.dest(paths.dist.images)));
 
-gulp.task('zip', () => {
+gulp.task('cleanZip', () => gulp.
+    src('zip/*', {
+        allowEmpty: true,
+        read: false
+    }).
+    pipe(deleteFiles()));
+
+gulp.task('zip', gulp.series('cleanZip', () => {
     const thirteenKb = 13 * 1024;
 
-    gulp.src('zip/*').
-        pipe(deleteFiles());
-
-    return gulp.src(`${paths.dist.dir}/**`).
+    return gulp.src(`${paths.dist.dir}/**`, { allowEmpty: false }).
         pipe(zip('game.zip')).
         pipe(gulp.dest('zip')).
         pipe(checkFileSize({
             fileSizeLimit: thirteenKb
         }));
-});
+}));
 
 gulp.task('build', gulp.series(
     'cleanDist',
