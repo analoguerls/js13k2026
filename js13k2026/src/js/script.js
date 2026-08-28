@@ -40,13 +40,14 @@ const
     BREAK_MESSAGES = ['Your next batch of customers are waiting\nfor their magical treat!', 'More hungry customers incoming.\nGet ready to scoop that poop!', 'Fresh poop. Hungry customers.\nTaste the Rainbow.', 'Business is booming. Unicorns are pooping.\nTime to get scooping!'],
     COLORS = {
         BACKGROUND: '#866F9B',
+        CLIPBOARD: '#ad9f85',
         CONE: '#E3D0BF',
         COUNTER_BASE: '#D9BCF2',
         COUNTER_TOP: '#F6ECFF',
         FLOOR: '#6C4F89',
         GREY: '#333',
-        INSPECTOR: '#7ED6B2',
-        INSPECTOR_STROKE: '#278C78',
+        INSPECTOR: '#FFF',
+        INSPECTOR_STROKE: '#333',
         WHITE: '#FFF'
     },
     COUNTER_BASE_H = 30,
@@ -702,7 +703,7 @@ function trySpawnInspector (dt) {
                 ctx.save();
                 ctx.translate(elbowX + 4 * this.dirX, elbowY - 4);
                 ctx.rotate(0.15 * this.dirX);
-                ctx.fillStyle = '#ad9f85';
+                ctx.fillStyle = COLORS.CLIPBOARD;
                 ctx.strokeStyle = COLORS.GREY;
                 ctx.lineWidth = 1;
                 ctx.fillRect(-9, -5, 18, 10);
