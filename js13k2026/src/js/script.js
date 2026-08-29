@@ -578,6 +578,60 @@ function dist (a, b) {
     return hypot(a.x - b.x, a.y - b.y);
 }
 
+// Returns true if a box of size (2*halfW x 2*halfH), swept from a to b, ever overlaps point p
+function sweptBoxHitsPoint (p, a, b, halfW, halfH) {
+    const
+        x0 = a.x - p.x,
+        y0 = a.y - p.y,
+        dx = (b.x - p.x) - x0,
+        dy = (b.y - p.y) - y0;
+
+    let tMin = 0,
+        tMax = 1;
+
+    if (dx === 0) {
+        if (x0 < -halfW || x0 > halfW) {
+            return false;
+        }
+    } else {
+        let tx1 = (-halfW - x0) / dx,
+            tx2 = (halfW - x0) / dx;
+
+        if (tx1 > tx2) {
+            [tx1, tx2] = [tx2, tx1];
+        }
+
+        tMin = max(tMin, tx1);
+        tMax = min(tMax, tx2);
+
+        if (tMin > tMax) {
+            return false;
+        }
+    }
+
+    if (dy === 0) {
+        if (y0 < -halfH || y0 > halfH) {
+            return false;
+        }
+    } else {
+        let ty1 = (-halfH - y0) / dy,
+            ty2 = (halfH - y0) / dy;
+
+        if (ty1 > ty2) {
+            [ty1, ty2] = [ty2, ty1];
+        }
+
+        tMin = max(tMin, ty1);
+        tMax = min(tMax, ty2);
+
+        if (tMin > tMax) {
+            return false;
+        }
+    }
+
+    return tMin <= tMax;
+}
+
 // Dumps one carried scoop at a time, charging $1 per scoop (clamped at 0)
 function dumpScoop () {
     if (game.over || !game.carrying.length) {
@@ -1216,7 +1270,10 @@ game.loop = GameLoop({
         trySpawnInspector(dt);
 
         if (game.inspector) {
-            const inspector = game.inspector;
+            const
+                inspector = game.inspector,
+                prevX = inspector.x,
+                prevY = inspector.y;
 
             tickPauseTimer(inspector, dt, 1, 1.5, 0.6, 1);
 
@@ -1244,7 +1301,10 @@ game.loop = GameLoop({
 
             // Fine the player $3 if the inspector steps on a dumped scoop, and confiscate it
             game.spills = game.spills.filter((s) => {
-                if (dist(inspector, s) >= INSPECTOR_CATCH_R) {
+                if (!sweptBoxHitsPoint(s, {
+                    x: prevX,
+                    y: prevY
+                }, inspector, inspector.width / 2 + 6, inspector.height / 2 + 6)) {
                     return true;
                 }
 
