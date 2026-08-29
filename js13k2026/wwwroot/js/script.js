@@ -63,23 +63,14 @@ const
     PLAYER_REACH_Y = 60,
     PLAYER_SPEED = 260,
     RAINBOW = [
-        // ROYGBIV
-        '#FAA',
-        '#FCA',
-        '#FFA',
-        '#AFA',
-        '#AAF',
-        '#CAF',
-        '#DBF'
-    ],
-    RAINBOW_STROKE = [
-        '#F00',
-        '#FA0',
-        '#FF0',
-        '#080',
-        '#00F',
-        '#408',
-        '#93E'
+        // [fill, stroke]
+        ['#FAA', '#F00'],
+        ['#FCA', '#FA0'],
+        ['#FFA', '#FF0'],
+        ['#AFA', '#080'],
+        ['#AAF', '#00F'],
+        ['#CAF', '#408'],
+        ['#DBF', '#93E']
     ],
     SQUISH_LERP = 0.2,
     TAIL_SWING_DURATION = 0.5,
@@ -248,23 +239,27 @@ function drawCircle (ctx, x, y, r, stroke) {
     }
 }
 
-// Returns the COLORS_STROKE entry that matches a given COLORS fill color
-function strokeForColor (color) {
-    return RAINBOW_STROKE[RAINBOW.indexOf(color)];
+// Strokes an arm path (shoulder -> elbow -> hand) using the current strokeStyle/lineWidth
+function strokeArmPath (ctx, armX, armY, elbowX, elbowY) {
+    ctx.beginPath();
+    ctx.moveTo(armX, armY - 7);
+    ctx.lineTo(elbowX, elbowY);
+    ctx.lineTo(armX, armY + 9);
+    ctx.stroke();
 }
 
 // Sets fill/stroke/lineWidth
 function setColorStyle (ctx, fill, stroke) {
     ctx.fillStyle = fill;
-    ctx.strokeStyle = stroke || strokeForColor(fill);
+    ctx.strokeStyle = stroke;
     ctx.lineWidth = 1;
 }
 
 // Draws a vertical stack of colored, stroked dots starting at yBase and moving up by step per entry
-function drawColorDots (ctx, colors, yBase, step, r) {
-    colors.forEach((fill, i) => {
-        setColorStyle(ctx, fill);
-        drawCircle(ctx, 0, yBase - i * step, r, true);
+function drawColorDots (ctx, colors, yBase, step, r, xBase = 0) {
+    colors.forEach(([fill, stroke], i) => {
+        setColorStyle(ctx, fill, stroke);
+        drawCircle(ctx, xBase, yBase - i * step, r, true);
     });
 }
 
@@ -380,6 +375,63 @@ function drawTriangle (ctx, x1, y1, x2, y2, x3, y3, stroke) {
     if (stroke) {
         ctx.stroke();
     }
+}
+
+// Draws a simple fez (wide at the base, narrower at the top, flat top, with a tassel)
+function drawSodaJerkHat (ctx, headCenterY, headR) {
+    const
+        baseW = headR * 1.6,
+        hatH = headR * 0.9,
+        hatTopY = headCenterY - headR - hatH,
+        hatY = headCenterY - headR,
+        topW = headR * 1.1;
+
+    ctx.fillStyle = COLORS.WHITE;
+    ctx.strokeStyle = COLORS.GREY;
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(-baseW / 2, hatY);
+    ctx.lineTo(-topW / 2, hatTopY);
+    ctx.lineTo(topW / 2, hatTopY);
+    ctx.lineTo(baseW / 2, hatY);
+    ctx.closePath();
+    fillStroke(ctx);
+
+    ctx.strokeStyle = RAINBOW[(game.round - 1) % RAINBOW.length][1];
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    ctx.moveTo(-baseW / 2, hatY);
+    ctx.quadraticCurveTo(0, (hatY + hatTopY) / 2, 0, hatTopY);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(baseW / 2, hatY);
+    ctx.quadraticCurveTo(0, (hatY + hatTopY) / 2, 0, hatTopY);
+    ctx.stroke();
+}
+
+// Draws a bow tie (two triangles + a center knot) just below the head
+function drawBowTie (ctx, headCenterY, headR) {
+    const
+        color = RAINBOW[(game.round - 1) % RAINBOW.length],
+        knotR = headR * 0.15 + 1,
+        tieH = headR * 0.75,
+        tieW = headR * 0.6,
+        tieY = headCenterY + headR * 1.1;
+
+    ctx.fillStyle = color[0];
+    ctx.strokeStyle = color[1];
+    ctx.lineWidth = 1;
+
+    drawTriangle(ctx, -knotR, tieY, -knotR - tieW, tieY - tieH / 2, -knotR - tieW, tieY + tieH / 2, true);
+    drawTriangle(ctx, knotR, tieY, knotR + tieW, tieY - tieH / 2, knotR + tieW, tieY + tieH / 2, true);
+
+    ctx.fillStyle = color[1];
+    ctx.beginPath();
+    ctx.arc(0, tieY, knotR, 0, PI * 2);
+    ctx.fill();
 }
 
 // Returns a fresh copy of the initial round/game state
@@ -714,19 +766,11 @@ function trySpawnInspector (dt) {
                 ctx.lineJoin = 'round';
                 ctx.strokeStyle = COLORS.INSPECTOR_STROKE;
                 ctx.lineWidth = 5;
-                ctx.beginPath();
-                ctx.moveTo(armX, armY - 7);
-                ctx.lineTo(elbowX, elbowY);
-                ctx.lineTo(armX, armY + 9);
-                ctx.stroke();
+                strokeArmPath(ctx, armX, armY, elbowX, elbowY);
 
                 ctx.strokeStyle = COLORS.INSPECTOR;
                 ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.moveTo(armX, armY - 7);
-                ctx.lineTo(elbowX, elbowY);
-                ctx.lineTo(armX, armY + 9);
-                ctx.stroke();
+                strokeArmPath(ctx, armX, armY, elbowX, elbowY);
             },
             vSpeed: 80 + rnd() * 60,
             width: 26,
@@ -770,22 +814,26 @@ game.player = Sprite({
             headR
         } = drawPerson(this.context, this.width, this.height, this.color, COLORS.GREY, this.deliverTimer > 0 ? 'delighted' : 'happy');
 
+        drawSodaJerkHat(this.context, headCenterY, headR);
+        drawBowTie(this.context, headCenterY, headR);
+
         if (game.carrying.length) {
             const
                 coneGap = 10,
                 coneH = 22,
                 coneW = 8,
-                coneY = headCenterY - headR - coneGap;
+                coneX = this.width / 2 + 12,
+                coneY = headCenterY + headR + coneGap + coneH - 6;
 
             this.context.fillStyle = COLORS.CONE;
             this.context.beginPath();
-            this.context.moveTo(-coneW, coneY - coneH);
-            this.context.lineTo(coneW, coneY - coneH);
-            this.context.lineTo(0, coneY);
+            this.context.moveTo(coneX - coneW, coneY - coneH);
+            this.context.lineTo(coneX + coneW, coneY - coneH);
+            this.context.lineTo(coneX, coneY);
             this.context.closePath();
             this.context.fill();
 
-            drawColorDots(this.context, game.carrying, coneY - coneH - 6, 14, 8);
+            drawColorDots(this.context, game.carrying, coneY - coneH - 6, 14, 8, coneX);
         }
 
         this.context.restore();
@@ -820,10 +868,14 @@ game.loop = GameLoop({
                 headW1 = 14,
                 headW2 = 8,
                 headX = u.x,
-                muzzleH = 12,
-                muzzleW = 7,
-                muzzleX = headX + headW1 / 2 - 2,
-                muzzleY = headTopY + (headBottomY - headTopY) * 0.4,
+                eyeR = 2,
+                eyeX = headX + 3.3,
+                eyeY = headTopY + (headBottomY - headTopY) * 0.3,
+                muzzleBaseW = 12,
+                muzzleTipW = 9,
+                muzzleH = 21,
+                muzzleX = headX + headW1 / 2 - 6,
+                muzzleY = headTopY + (headBottomY - headTopY) * 0.18,
                 r = 3;
 
             context.save();
@@ -831,17 +883,7 @@ game.loop = GameLoop({
             context.scale(u.squishX, u.squishY);
             context.translate(-u.x, -u.y);
 
-            // Muzzle (small rectangle tilted so its right edge slopes down, drawn before the head so it appears behind it)
-            setColorStyle(context, COLORS.WHITE, COLORS.GREY);
-            context.save();
-            context.translate(muzzleX, muzzleY);
-            context.rotate(-PI / 5);
-            context.beginPath();
-            context.roundRect(-muzzleW / 2, 0, muzzleW, muzzleH, r);
-            fillStroke(context);
-            context.restore();
-
-            // Head (rectangle that narrows toward the top, rounded corners, centered)
+            // Head (rectangle that narrows toward the top, rounded corners, centered) - drawn first so muzzle can overlay its edge seamlessly
             setColorStyle(context, COLORS.WHITE, COLORS.GREY);
             context.beginPath();
             context.moveTo(headX - headW1 / 2, headBottomY);
@@ -853,6 +895,42 @@ game.loop = GameLoop({
             context.closePath();
             fillStroke(context);
 
+            // Muzzle (small rectangle tilted so its right edge slopes down, drawn on top of the head with no stroke so it merges seamlessly)
+            context.fillStyle = COLORS.WHITE;
+            context.save();
+            context.translate(muzzleX, muzzleY);
+            context.rotate(-PI / 4);
+            context.beginPath();
+            context.moveTo(-muzzleBaseW / 2 + r, 0);
+            context.lineTo(muzzleBaseW / 2 - r, 0);
+            context.quadraticCurveTo(muzzleBaseW / 2, 0, muzzleBaseW / 2, r);
+            context.lineTo(muzzleTipW / 2, muzzleH - r);
+            context.quadraticCurveTo(muzzleTipW / 2, muzzleH, muzzleTipW / 2 - r, muzzleH);
+            context.lineTo(-muzzleTipW / 2 + r, muzzleH);
+            context.quadraticCurveTo(-muzzleTipW / 2, muzzleH, -muzzleTipW / 2, muzzleH - r);
+            context.lineTo(-muzzleBaseW / 2, r);
+            context.quadraticCurveTo(-muzzleBaseW / 2, 0, -muzzleBaseW / 2 + r, 0);
+            context.closePath();
+            context.fill();
+            context.fill();
+            context.restore();
+
+            // Eye (simple filled circle normally; squints to an X while the tail swing animation is active, i.e. when carrying a scoop)
+            if (u.tailSwingTimer > 0) {
+                context.strokeStyle = COLORS.GREY;
+                context.lineWidth = 1;
+                context.beginPath();
+                context.moveTo(eyeX - eyeR, eyeY - eyeR);
+                context.lineTo(eyeX + eyeR, eyeY);
+                context.lineTo(eyeX - eyeR, eyeY + eyeR);
+                context.stroke();
+            } else {
+                context.fillStyle = COLORS.GREY;
+                context.beginPath();
+                context.arc(eyeX, eyeY, eyeR, 0, PI * 2);
+                context.fill();
+            }
+
             // Body (oval)
             setColorStyle(context, COLORS.WHITE, COLORS.GREY);
             context.beginPath();
@@ -860,11 +938,11 @@ game.loop = GameLoop({
             fillStroke(context);
 
             // Horn (centered on top of the head, narrower and lowered slightly)
-            setColorStyle(context, u.color);
+            setColorStyle(context, ...u.color);
             drawTriangle(context, headX - 3, headTopY + 4, headX + 3, headTopY + 4, headX, headTopY - 16, true);
 
             // Tail (curved teardrop shape, tip starting at the center of the body oval; swings out when a scoop is picked up)
-            setColorStyle(context, u.color);
+            setColorStyle(context, ...u.color);
             context.save();
             context.translate(u.x, u.y);
             context.rotate(-(PI / 2) * (u.tailSwingTimer / TAIL_SWING_DURATION));
