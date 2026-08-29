@@ -1022,8 +1022,8 @@ game.loop = GameLoop({
             context.rotate(-(PI / 2) * (u.tailSwingTimer / TAIL_SWING_DURATION));
             context.beginPath();
             context.moveTo(0, 0);
-            context.quadraticCurveTo(10, 18, 0, 36);
-            context.quadraticCurveTo(-10, 18, 0, 0);
+            context.quadraticCurveTo(15, 15, 0, 42);
+            context.quadraticCurveTo(-15, 15, 0, 0);
             context.closePath();
             fillStroke(context);
             context.restore();
