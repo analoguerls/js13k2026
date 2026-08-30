@@ -27,7 +27,7 @@ const
     {
         random: rnd,
         max, min,
-        hypot, sin,
+        hypot, sin, cos, atan2,
         ceil,
         floor,
         abs,
@@ -44,11 +44,11 @@ const
     COLORS = [
         '#866F9B',
         '#ad9f85',
-        '#E3D0BF',
+        '#DAB592',
         '#D9BCF2',
         '#F6ECFF',
         '#6C4F89',
-        '#333',
+        '#666',
         '#FFF'
     ],
     COUNTER_BASE_H = 30,
@@ -86,6 +86,13 @@ const
             ctx.arc(0, mouthY + r * 0.35, mouthW * 0.7, 1.15 * PI, 1.85 * PI);
         }
     },
+    CONTAMINATED_COLOR = ['#8B5A2B', '#4A2E12'],
+    FLY_CATCH_R = 6,
+    FLY_COOLDOWN = 15,
+    FLY_DOT_COUNT = 7,
+    FLY_HOVER_TIME = 3,
+    FLY_MIN_ROUND = 4,
+    FLY_SPEED = 70,
     INSPECTOR_CATCH_R = 24,
     INSPECTOR_COOLDOWN = 20,
     PICKUP_R = 42,
@@ -504,6 +511,8 @@ function initialState () {
         colorBag: [],
         customers: [],
         elapsed: 0,
+        flies: null,
+        flyCooldown: FLY_COOLDOWN,
         inspector: null,
         inspectorCooldown: 0,
         maxAtOnce: 3,
@@ -903,6 +912,47 @@ function trySpawnInspector (dt) {
     }
 }
 
+/*
+ * Fly swarm mechanic tuning:
+ * - Only spawns from round FLY_MIN_ROUND onward, and only while there are spills on the floor.
+ * - Enters from the right edge and flies toward the nearest un-visited spill, hovering/buzzing
+ *   over it for FLY_HOVER_TIME seconds before moving on to the next one.
+ * - Movement uses layered sine/cosine jitter on top of a straight-line heading for an erratic,
+ *   buzzing flight path.
+ * - Touching the swarm while carrying scoops contaminates the top (last-picked) scoop.
+ */
+function trySpawnFlies (dt) {
+    if (game.round < FLY_MIN_ROUND || game.flies || !game.spills.length) {
+        return;
+    }
+
+    if (game.flyCooldown > 0) {
+        game.flyCooldown -= dt;
+
+        return;
+    }
+
+    if (rnd() < 0.005) {
+        game.flies = {
+            dots: Array.from({
+                length: FLY_DOT_COUNT
+            }, () => ({
+                phase: rnd() * PI * 2,
+                r: 6 + rnd() * 10,
+                speed: 4 + rnd() * 4
+            })),
+            hoverTimer: 0,
+            jitterPhase: rnd() * PI * 2,
+            target: null,
+            visited: [],
+            x: canvas.width + 20,
+            y: UNICORN_Y + PLAYER_REACH_Y + rnd() * (PLAYER_MAX_Y - (UNICORN_Y + PLAYER_REACH_Y))
+        };
+
+        game.flies.radius = max(...game.flies.dots.map((d) => d.r));
+    }
+}
+
 // Setup controls: pairs of [key, gamepad button, handler]
 [['n', 'start', restart], ['space', 'south', tryAction], ['x', 'west', dumpScoop], ['m', 'north', toggleMute]].forEach(([key, pad, fn]) => {
     onKey(key, fn);
@@ -986,6 +1036,18 @@ game.loop = GameLoop({
             drawPoop(context, s.x, s.y, 6);
         });
 
+        // Draw the fly swarm as a cluster of buzzing black dots
+        if (game.flies) {
+            const swarm = game.flies;
+
+            context.fillStyle = COLORS[6];
+            swarm.dots.forEach((d) => {
+                const angle = swarm.jitterPhase * d.speed + d.phase;
+
+                drawCircle(context, swarm.x + cos(angle) * d.r, swarm.y + sin(angle) * d.r * 0.6, 1.6);
+            });
+        }
+
         // Draw the unicorns
         UNICORNS.forEach((u) => {
             const
@@ -1012,7 +1074,7 @@ game.loop = GameLoop({
             context.translate(-u.x, -u.y);
 
             // Head (rectangle that narrows toward the top, rounded corners, centered) - drawn first so muzzle can overlay its edge seamlessly
-            setColorStyle(context, COLORS[7], COLORS[6]);
+            setColorStyle(context, COLORS[7], COLORS[3]);
             context.beginPath();
             context.moveTo(headX - headW1 / 2, headBottomY);
             context.lineTo(headX + headW1 / 2, headBottomY);
@@ -1060,7 +1122,7 @@ game.loop = GameLoop({
             }
 
             // Body (oval)
-            setColorStyle(context, COLORS[7], COLORS[6]);
+            setColorStyle(context, COLORS[7], COLORS[3]);
             context.beginPath();
             context.ellipse(u.x, u.y, bodyRx, bodyRy, 0, 0, PI * 2);
             fillStroke(context);
@@ -1328,6 +1390,52 @@ game.loop = GameLoop({
                 // Completed the return trip without catching anyone
                 game.inspector = null;
                 game.inspectorCooldown = INSPECTOR_COOLDOWN;
+            }
+        }
+
+        // Move/update the fly swarm: seek the next un-visited spill, hover over it, then despawn off-screen
+        trySpawnFlies(dt);
+
+        if (game.flies) {
+            const swarm = game.flies;
+
+            swarm.jitterPhase += dt * 3;
+
+            if (!swarm.target) {
+                swarm.target = game.spills.find((s) => !swarm.visited.includes(s));
+            }
+
+            if (swarm.target && !game.spills.includes(swarm.target)) {
+                swarm.target = null;
+                swarm.hoverTimer = 0;
+            } else if (swarm.target && dist(swarm, swarm.target) < 12) {
+                swarm.hoverTimer ||= FLY_HOVER_TIME;
+                tickDown(swarm, 'hoverTimer', dt);
+
+                if (swarm.hoverTimer <= 0) {
+                    swarm.visited.push(swarm.target);
+                    swarm.target = null;
+                }
+            } else {
+                const
+                    destX = swarm.target ? swarm.target.x : -40,
+                    destY = swarm.target ? swarm.target.y : swarm.y,
+                    angle = atan2(destY - swarm.y, destX - swarm.x);
+
+                swarm.x += (cos(angle) * FLY_SPEED + sin(swarm.jitterPhase * 2) * 30) * dt;
+                swarm.y += (sin(angle) * FLY_SPEED + cos(swarm.jitterPhase * 1.7) * 30) * dt;
+            }
+
+            // Contaminate the top (most recently scooped) cone if any part of the player overlaps the swarm's spread
+            if (game.carrying.length && dist(game.player, swarm) < FLY_CATCH_R + swarm.radius + game.player.width / 2) {
+                game.carrying[game.carrying.length - 1] = CONTAMINATED_COLOR;
+                soundFx('contaminate');
+            }
+
+            // Despawn once it has drifted off the left edge with nowhere left to go
+            if (!swarm.target && swarm.x < -40) {
+                game.flies = null;
+                game.flyCooldown = FLY_COOLDOWN;
             }
         }
 
