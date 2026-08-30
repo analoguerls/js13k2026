@@ -28,7 +28,6 @@ const
         random: rnd,
         max, min,
         hypot, sin, cos, atan2,
-        ceil,
         floor,
         abs,
         PI
@@ -39,8 +38,8 @@ const
     } = init(),
     BOUNCE_AMPLITUDE = 3,
     BOUNCE_SPEED = 10,
-    BREAK_MESSAGES = ['Your next batch of customers are waiting\nfor their magical treat!', 'More hungry customers incoming.\nGet ready to scoop that poop!', 'Fresh poop. Hungry customers.\nTaste the Rainbow.', 'Business is booming. Unicorns are pooping.\nTime to get scooping!'],
-    // Indices: 0 BACKGROUND, 1 CLIPBOARD, 2 CONE, 3 COUNTER_BASE, 4 COUNTER_TOP, 5 FLOOR, 6 GREY, 7 WHITE
+    BREAK_MESSAGES = ['SEVEN MAGICAL UNICORNS.\nONE VERY QUESTIONABLE ICE CREAM SHOP!', 'HUNGRY CUSTOMERS INCOMING.\nGET READY TO SCOOP THAT POOP!', 'FRESH POOP. HUNGRY CUSTOMERS.\nTASTE THE RAINBOW.', 'BUSINESS IS BOOMIN’ UNICORNS ARE POOPIN’\nTIME TO GET SCOOPIN’'],
+    // Indices: 0 BACKGROUND, 1 CLIPBOARD, 2 CONE, 3 COUNTER_BASE, 4 COUNTER_TOP, 5 FLOOR, 6 GREY, 7 WHITE, 8 BLACK
     COLORS = [
         '#866F9B',
         '#ad9f85',
@@ -49,7 +48,8 @@ const
         '#F6ECFF',
         '#6C4F89',
         '#666',
-        '#FFF'
+        '#FFF',
+        '#000'
     ],
     COUNTER_BASE_H = 30,
     COUNTER_MID_H = 30,
@@ -91,8 +91,9 @@ const
     FLY_COOLDOWN = 15,
     FLY_DOT_COUNT = 7,
     FLY_HOVER_TIME = 3,
-    FLY_MIN_ROUND = 4,
+    FLY_MIN_ROUND = 3,
     FLY_SPEED = 70,
+    GAME_OVER_DURATION = 12,
     INSPECTOR_CATCH_R = 24,
     INSPECTOR_COOLDOWN = 20,
     PICKUP_R = 42,
@@ -109,8 +110,10 @@ const
         ['#CAF', '#408'],
         ['#DBF', '#93E']
     ],
+    SPLASH_SCOOP_COLOR = RAINBOW[floor(rnd() * RAINBOW.length)],
     SQUISH_LERP = 0.2,
     TAIL_SWING_DURATION = 0.5,
+    UNICORN_Y = 110,
     UNICORNS = RAINBOW.map((color, i) => ({
         color,
         idleTimer: rnd() * 10,
@@ -119,9 +122,8 @@ const
         squishY: 1,
         tailSwingTimer: 0,
         x: 80 + i * 70,
-        y: 90
+        y: UNICORN_Y
     })),
-    UNICORN_Y = 90,
     // Shared factory for UI text entries: defaults to white fill + centered anchor
     uiText = (opts) => Text({
         anchor: {
@@ -137,7 +139,7 @@ const
         started: false,
         ui: {
             break: uiText({
-                font: '28px monospace',
+                font: '30px monospace',
                 text: BREAK_MESSAGES[0],
                 textAlign: 'center',
                 width: canvas.width - 60,
@@ -150,13 +152,13 @@ const
                     y: 0
                 },
                 font: '21px monospace',
-                text: 'Best $0',
+                text: 'BEST $0',
                 x: canvas.width - 10,
                 y: 10
             }),
             over: uiText({
                 font: '30px monospace',
-                text: 'That\'s one way to flush a career\nPress N to scoop again',
+                text: 'THAT’S ONE WAY TO FLUSH A CAREER\nPRESS N TO SCOOP AGAIN',
                 x: canvas.width / 2,
                 y: canvas.height / 2
             }),
@@ -169,13 +171,6 @@ const
                 text: '$0',
                 x: 10,
                 y: 10
-            }),
-            splash: uiText({
-                font: '30px monospace',
-                text: 'Grab a cone and get ready to scoop\nPress N to start',
-                textAlign: 'center',
-                x: canvas.width / 2,
-                y: canvas.height / 2
             })
         }
     },
@@ -193,7 +188,9 @@ const
                 }
             },
             stop () {
-                player.stop();
+                if (player) {
+                    player.stop();
+                }
                 player = null;
             }
         };
@@ -315,6 +312,28 @@ function drawPoop (ctx, x, y, r) {
     beginPath.call(ctx);
     drawLobes();
     fill.call(ctx);
+}
+
+// Draws a striped red/white canopy across the top of the screen, made of alternating tabs rounded at the bottom
+function drawCanopy (ctx, width, tabCount = 20, straightH = 34, roundH = 14) {
+    const
+        tabW = width / tabCount,
+        r = tabW / 2;
+
+    for (let i = 0; i < tabCount; i += 1) {
+        const x = i * tabW;
+
+        ctx.fillStyle = i % 2 === 0 ? roundColor()[0] : COLORS[7];
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + tabW, 0);
+        ctx.lineTo(x + tabW, straightH);
+        ctx.lineTo(x + tabW, straightH + roundH - r);
+        ctx.arc(x + tabW / 2, straightH + roundH - r, r, 0, PI);
+        ctx.lineTo(x, straightH);
+        ctx.closePath();
+        ctx.fill();
+    }
 }
 
 // Strokes an arm path (shoulder -> elbow -> hand) using the current strokeStyle/lineWidth
@@ -518,6 +537,7 @@ function initialState () {
         maxAtOnce: 3,
         onBreak: false,
         over: false,
+        overTimer: 0,
         round: 1,
         roundColor: RAINBOW[0],
         score: 0,
@@ -543,6 +563,167 @@ function setScore (value) {
     game.score = max(0, value);
     game.ui.score.text = `$${game.score}`;
     updateHighScore();
+}
+
+// Draws the soda shop / ice cream parlor letterboard splash screen
+function renderSplashBoard (ctx) {
+    const
+        best = max(getStoreItem('unicorn_poop') || 0, game.score),
+        boardW = canvas.width * 0.6,
+        padX = 18,
+        rowH = 12,
+        fontColor = RAINBOW[5][1],
+        slotColor = RAINBOW[6][0],
+        lines = [
+            ['', ''],
+            ['', ''],
+            ['', ''],
+            ['', ''],
+            ['', ''],
+            ['', ''],
+            ['', ''],
+            ['', ''],
+            ['MENU', ''],
+            ['', ''],
+            ['', ''],
+            ['1 SCOOP', '$3', '1'],
+            ['', ''],
+            ['2 SCOOPS', '$5', '2'],
+            ['', ''],
+            ['3 SCOOPS', '$7', '3'],
+            ['', ''],
+            ['', ''],
+            ['BEST', `$${best}`],
+            ['', ''],
+            ['', ''],
+            ['PRESS N TO START SCOOPIN’', '', 'N'],
+            ['', ''],
+            ['', '']
+        ],
+        HEADER_ROWS = 6,
+        boardH = lines.length * rowH,
+        boardX = (canvas.width - boardW) / 2,
+        boardY = (canvas.height - boardH) / 2,
+        headerCenterY = boardY + (rowH * HEADER_ROWS) / 2,
+        titleText = 'Poop n’ Scoop',
+        titleX = boardX + padX,
+        titleWidth = ctx.measureText(titleText).width,
+        titleGradient = ctx.createLinearGradient(titleX, 0, titleX + titleWidth, 0),
+        coneOffsetY = 30,
+        coneTipY = boardY + rowH * HEADER_ROWS,
+        frameTopY = boardY - 3,
+        coneH = (coneTipY - frameTopY) * 1.8,
+        coneW = coneH * 0.28,
+        coneTopY = coneTipY - coneH,
+        coneX = boardX + boardW - padX - coneW,
+        scoopR = coneW,
+        coneCenterY = (coneTopY + coneTipY) / 2;
+    let rowY = boardY + rowH / 2;
+
+    // Shadow rectangle, offset for depth
+    ctx.fillStyle = COLORS[5];
+    ctx.fillRect(boardX - 3 + 6, boardY - 3 + 6, boardW + 6, boardH + 6);
+
+    // Board frame
+    ctx.fillStyle = fontColor;
+    ctx.fillRect(boardX - 3, boardY - 3, boardW + 6, boardH + 6);
+    ctx.fillStyle = COLORS[7];
+    ctx.fillRect(boardX, boardY, boardW, boardH);
+
+    // Header block behind the title area
+    ctx.fillStyle = fontColor;
+    ctx.fillRect(boardX, boardY, boardW, rowH * HEADER_ROWS);
+
+    // Title text inside the header block, left side, opposite the cone
+    ctx.font = 'small-caps bold 36px cursive';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    RAINBOW.forEach((c, idx) => {
+        titleGradient.addColorStop(idx / (RAINBOW.length - 1), c[0]);
+    });
+
+    ctx.fillStyle = titleGradient;
+    ctx.fillText(titleText, titleX, headerCenterY);
+
+    // Ice cream cone with a scoop, in the top-right of the header, poking 1/3 of its length above the frame
+    ctx.save();
+    ctx.translate(coneX, coneCenterY + coneOffsetY);
+    ctx.rotate(30 * PI / 180);
+
+    ctx.fillStyle = COLORS[2];
+    ctx.beginPath();
+    ctx.moveTo(-coneW, coneTopY - coneCenterY);
+    ctx.lineTo(coneW, coneTopY - coneCenterY);
+    ctx.lineTo(0, coneTipY - coneCenterY);
+    ctx.closePath();
+    ctx.fill();
+
+    // Scoop sitting on top of the cone
+    ctx.fillStyle = SPLASH_SCOOP_COLOR[0];
+    ctx.beginPath();
+    ctx.arc(0, coneTopY - coneCenterY, scoopR, 0, PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = SPLASH_SCOOP_COLOR[1];
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = fontColor;
+    ctx.font = '18px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.strokeStyle = slotColor;
+    ctx.lineWidth = 1;
+
+    lines.forEach(([label, price, highlight], i) => {
+        // Slot line above this row (skip inside the header block)
+        if (i >= HEADER_ROWS) {
+            ctx.beginPath();
+            ctx.moveTo(boardX, Math.floor(rowY - rowH / 2) + 0.5);
+            ctx.lineTo(boardX + boardW, Math.floor(rowY - rowH / 2) + 0.5);
+            ctx.stroke();
+        }
+
+        const labelColor = i < HEADER_ROWS ? COLORS[7] : fontColor;
+
+        ctx.textAlign = 'left';
+
+        if (highlight) {
+            const
+                idx = label.indexOf(highlight),
+                before = label.slice(0, idx),
+                after = label.slice(idx + 1);
+            let x = boardX + padX;
+
+            ctx.fillStyle = labelColor;
+            ctx.fillText(before, x, rowY);
+            x += ctx.measureText(before).width;
+
+            ctx.fillStyle = RAINBOW[0][1];
+            ctx.fillText(highlight, x, rowY);
+            x += ctx.measureText(highlight).width;
+
+            ctx.fillStyle = labelColor;
+            ctx.fillText(after, x, rowY);
+        } else {
+            ctx.fillStyle = labelColor;
+            ctx.fillText(label, boardX + padX, rowY);
+        }
+
+        if (price) {
+            ctx.fillStyle = RAINBOW[0][1];
+            ctx.textAlign = 'right';
+            ctx.fillText(price, boardX + boardW - padX, rowY);
+        }
+
+        rowY += rowH;
+    });
+
+    // Slot line below the final row
+    ctx.beginPath();
+    ctx.moveTo(boardX, Math.floor(rowY - rowH / 2) + 0.5);
+    ctx.lineTo(boardX + boardW, Math.floor(rowY - rowH / 2) + 0.5);
+    ctx.stroke();
 }
 
 // Advances/decays a paused-vs-moving timer on an entity, toggling `paused` and picking a new random duration
@@ -649,6 +830,7 @@ function dumpScoop () {
 
     game.spills.push({
         color: game.carrying.pop(),
+        visits: 0,
         x: game.player.x,
         y: game.player.y
     });
@@ -796,11 +978,14 @@ function tryAction () {
             wrongTarget = game.customers.find((c) => !c.served && dist(game.player, c) < DELIVER_R);
 
         if (target) {
-            const payout = {
-                1: 3,
-                2: 6,
-                3: 9
-            }[game.carrying.length] || 0;
+            const
+                progress = ((canvas.width + 20) - target.x) / (canvas.width + 40),
+                isHappy = target.annoyedTimer <= 0 && progress < 0.33,
+                payout = {
+                    1: 3,
+                    2: 6,
+                    3: 9
+                }[game.carrying.length] || 0 + (isHappy ? 1 : 0);
 
             target.served = true;
             game.carrying = [];
@@ -1021,14 +1206,13 @@ game.player = Sprite({
 game.loop = GameLoop({
     render () {
         if (!game.started) {
-            context.fillStyle = COLORS[0];
-            context.fillRect(0, 0, canvas.width, canvas.height);
-            game.ui.splash.render();
+            renderSplashBoard(context);
 
             return;
         }
         context.fillStyle = COLORS[0];
         context.fillRect(0, 0, canvas.width, canvas.height);
+        drawCanopy(context, canvas.width);
 
         // Draw dumped scoops left behind on the floor
         game.spills.forEach((s) => {
@@ -1040,7 +1224,7 @@ game.loop = GameLoop({
         if (game.flies) {
             const swarm = game.flies;
 
-            context.fillStyle = COLORS[6];
+            context.fillStyle = COLORS[8];
             swarm.dots.forEach((d) => {
                 const angle = swarm.jitterPhase * d.speed + d.phase;
 
@@ -1218,7 +1402,18 @@ game.loop = GameLoop({
         }
     },
     update (dt) {
-        if (!game.started || game.over) {
+        if (!game.started) {
+            return;
+        }
+
+        if (game.over) {
+            game.overTimer -= dt;
+
+            if (game.overTimer <= 0) {
+                resetGame();
+                game.started = false;
+            }
+
             return;
         }
 
@@ -1376,10 +1571,10 @@ game.loop = GameLoop({
                 return false;
             });
 
-            // Catch the player: fine them 10% and confiscate their carried scoop
-            if (dist(game.player, inspector) < INSPECTOR_CATCH_R) {
+            // Catch the player: fine them $10 and confiscate their carried scoop
+            if (dist(game.player, inspector) < INSPECTOR_CATCH_R && game.carrying.length > 0) {
                 game.carrying = [];
-                setScore(ceil(game.score * 0.9));
+                setScore(game.score - 10);
 
                 game.inspector = null;
                 game.inspectorCooldown = INSPECTOR_COOLDOWN;
@@ -1414,6 +1609,12 @@ game.loop = GameLoop({
 
                 if (swarm.hoverTimer <= 0) {
                     swarm.visited.push(swarm.target);
+                    swarm.target.visits += 1;
+
+                    if (swarm.target.visits >= 2) {
+                        game.spills = game.spills.filter((s) => s !== swarm.target);
+                    }
+
                     swarm.target = null;
                 }
             } else {
@@ -1443,6 +1644,8 @@ game.loop = GameLoop({
         // Losing a single customer past the counter ends the game
         if (game.customers.some((c) => !c.served && c.x <= -20)) {
             game.over = true;
+            game.overTimer = GAME_OVER_DURATION;
+            music.stop();
         } else {
             game.customers = game.customers.filter((c) => !c.served);
         }
