@@ -51,8 +51,3 @@ Serve quickly. Match those colors. Don't get caught serving unicorn poop.
 
  - [Kontra.js v10.0.2](https://straker.github.io/kontra/)
  - [ZzFXM (v2.0.3)](https://github.com/keithclark/ZzFXM)
-
-## MINIFICATION PROCESS
- - npx rollup -c to build the script
- - Minify with https://www.digitalocean.com/community/tools/minify
- - Compress with https://lifthrasiir.github.io/roadroller/
