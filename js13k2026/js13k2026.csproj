@@ -7,22 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Remove="wwwroot\dist\index.html" />
-    <Content Remove="wwwroot\dist\script.min.js" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="dist\" />
     <Folder Include="modules\" />
     <Folder Include="assets\" />
     <Folder Include="zip\" />
     <Folder Include="src\images\" />
     <Folder Include="src\css\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="wwwroot\dist\index.html" />
-    <None Include="wwwroot\dist\script.min.js" />
   </ItemGroup>
 
 </Project>
