@@ -669,7 +669,7 @@ function renderSplashBoard (ctx) {
         boardX = (canvas.width - boardW) / 2,
         boardY = (canvas.height - boardH) / 2,
         headerCenterY = boardY + (rowH * HEADER_ROWS) / 2,
-        titleText = 'Poop ’N Scoop',
+        titleText = 'Poop n’ Scoop',
         titleX = boardX + padX,
         titleWidth = ctx.measureText(titleText).width,
         titleGradient = ctx.createLinearGradient(titleX, 0, titleX + titleWidth, 0),

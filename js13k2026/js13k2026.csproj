@@ -9,6 +9,8 @@
   <ItemGroup>
     <Folder Include="dist\" />
     <Folder Include="assets\" />
+    <Folder Include="wwwroot\dist\" />
+    <Folder Include="wwwroot\js\" />
     <Folder Include="zip\" />
     <Folder Include="src\images\" />
     <Folder Include="src\css\" />

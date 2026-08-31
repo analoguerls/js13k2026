@@ -27,6 +27,7 @@
     "gulp-rimraf": "^1.0.0",
     "gulp-terser": "^2.1.0",
     "gulp-zip": "^6.1.0",
+    "roadroller": "^2.1.0",
     "rollup": "^4.62.4",
     "rollup-plugin-kontra": "^1.0.1"
   }
