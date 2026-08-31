@@ -17,5 +17,6 @@
 
 
  ## MINIFY
-  - Run through https://www.digitalocean.com/community/tools/minify
-	- Then https://lifthrasiir.github.io/roadroller/#num-contexts
+  - npx rollup -c to build the script
+  - Minify with https://www.digitalocean.com/community/tools/minify
+	- Then run through https://lifthrasiir.github.io/roadroller/
