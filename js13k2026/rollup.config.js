@@ -10,19 +10,11 @@ export default {
     plugins: [
         kontra({
             gameObject: {
-                anchor: true,
-                radius: true,
-                rotation: true,
-                scale: true,
-                velocity: true
+                anchor: true
             },
-            sprite: {
-                animation: true,
-                image: true
-            },
+
             text: {
-                align: true,
-                newline: true
+                align: true
             }
         })
     ]

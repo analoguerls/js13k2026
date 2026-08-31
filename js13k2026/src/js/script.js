@@ -32,13 +32,14 @@ const
         abs,
         PI
     } = Math,
+    TAU = PI * 2,
     {
         canvas,
         context
     } = init(),
     BOUNCE_AMPLITUDE = 3,
     BOUNCE_SPEED = 10,
-    BREAK_MESSAGES = ['SEVEN MAGICAL UNICORNS.\nONE VERY QUESTIONABLE ICE CREAM SHOP!', 'HUNGRY CUSTOMERS INCOMING.\nGET READY TO SCOOP THAT POOP!', 'FRESH POOP. HUNGRY CUSTOMERS.\nTASTE THE RAINBOW.', 'BUSINESS IS BOOMIN’ UNICORNS ARE POOPIN’\nTIME TO GET SCOOPIN’'],
+    BREAK_MESSAGES = ['HUNGRY CUSTOMERS INCOMING. GET READY TO SCOOP THAT POOP!', 'FRESH POOP. HUNGRY CUSTOMERS. TASTE THE RAINBOW.', 'BUSINESS IS BOOMIN’ UNICORNS ARE POOPIN’ TIME TO GET SCOOPIN’'],
     // Indices: 0 BACKGROUND, 1 CLIPBOARD, 2 CONE, 3 COUNTER_BASE, 4 COUNTER_TOP, 5 FLOOR, 6 GREY, 7 WHITE, 8 BLACK
     COLORS = [
         '#866F9B',
@@ -112,6 +113,7 @@ const
     ],
     SPLASH_SCOOP_COLOR = RAINBOW[floor(rnd() * RAINBOW.length)],
     SQUISH_LERP = 0.2,
+    STORAGE_KEY = 'js13kpoopnscoop',
     TAIL_SWING_DURATION = 0.5,
     UNICORN_Y = 110,
     UNICORNS = RAINBOW.map((color, i) => ({
@@ -121,7 +123,7 @@ const
         squishX: 1,
         squishY: 1,
         tailSwingTimer: 0,
-        x: 80 + i * 70,
+        x: 140 + i * 70,
         y: UNICORN_Y
     })),
     // Shared factory for UI text entries: defaults to white fill + centered anchor
@@ -131,6 +133,11 @@ const
             y: 0.5
         },
         color: COLORS[7],
+        font: '15px monospace',
+        textAlign: 'center',
+        width: canvas.width - 20,
+        x: canvas.width / 2,
+        y: canvas.height - COUNTER_BASE_H / 2,
         ...opts
     }),
     game = {
@@ -139,38 +146,10 @@ const
         started: false,
         ui: {
             break: uiText({
-                font: '30px monospace',
-                text: BREAK_MESSAGES[0],
-                textAlign: 'center',
-                width: canvas.width - 60,
-                x: canvas.width / 2,
-                y: canvas.height / 2
-            }),
-            highScore: uiText({
-                anchor: {
-                    x: 1,
-                    y: 0
-                },
-                font: '21px monospace',
-                text: 'BEST $0',
-                x: canvas.width - 10,
-                y: 10
+                text: BREAK_MESSAGES[0]
             }),
             over: uiText({
-                font: '30px monospace',
-                text: 'THAT’S ONE WAY TO FLUSH A CAREER\nPRESS N TO SCOOP AGAIN',
-                x: canvas.width / 2,
-                y: canvas.height / 2
-            }),
-            score: uiText({
-                anchor: {
-                    x: 0,
-                    y: 0
-                },
-                font: '21px monospace',
-                text: '$0',
-                x: 10,
-                y: 10
+                text: 'THAT’S ONE WAY TO FLUSH A CAREER! PRESS N TO SCOOP AGAIN'
             })
         }
     },
@@ -270,7 +249,7 @@ function drawBalloon (ctx, x, y, w, h) {
 // Draws a circle at (x, y) with radius r on the given context, optionally stroking it
 function drawCircle (ctx, x, y, r, stroke) {
     ctx.beginPath();
-    ctx.arc(x, y, r, 0, PI * 2);
+    ctx.arc(x, y, r, 0, TAU);
     ctx.fill();
 
     if (stroke) {
@@ -280,38 +259,29 @@ function drawCircle (ctx, x, y, r, stroke) {
 
 // Draws a simple poop-emoji shape: three stacked tapering lobes with a swirl tip, filled with a single outer-border stroke (no seams between lobes)
 function drawPoop (ctx, x, y, r) {
-    const
-        {
-            beginPath,
-            moveTo,
-            ellipse,
-            quadraticCurveTo,
-            stroke,
-            fill
-        } = ctx,
-        drawLobes = () => {
-            moveTo.call(ctx, x + r * 1.1, y + r * 0.9);
-            ellipse.call(ctx, x, y + r * 0.9, r * 1.1, r * 0.55, 0, 0, PI * 2);
-            moveTo.call(ctx, x + r * 0.85, y + r * 0.1);
-            ellipse.call(ctx, x, y + r * 0.1, r * 0.85, r * 0.5, 0, 0, PI * 2);
-            moveTo.call(ctx, x + r * 0.55, y - r * 0.6);
-            ellipse.call(ctx, x, y - r * 0.6, r * 0.55, r * 0.4, 0, 0, PI * 2);
-            moveTo.call(ctx, x + r * 0.15, y - r * 1.1);
-            quadraticCurveTo.call(ctx, x + r * 0.5, y - r * 1.3, x, y - r * 1.5);
-        };
+    const drawLobes = () => {
+        ctx.moveTo(x + r * 1.1, y + r * 0.9);
+        ctx.ellipse(x, y + r * 0.9, r * 1.1, r * 0.55, 0, 0, TAU);
+        ctx.moveTo(x + r * 0.85, y + r * 0.1);
+        ctx.ellipse(x, y + r * 0.1, r * 0.85, r * 0.5, 0, 0, TAU);
+        ctx.moveTo(x + r * 0.55, y - r * 0.6);
+        ctx.ellipse(x, y - r * 0.6, r * 0.55, r * 0.4, 0, 0, TAU);
+        ctx.moveTo(x + r * 0.15, y - r * 1.1);
+        ctx.quadraticCurveTo(x + r * 0.5, y - r * 1.3, x, y - r * 1.5);
+    };
 
     // Wide stroke first (color's stroke, drawn thick) so only the outermost edge remains visible once the fill covers the seams
     ctx.save();
     ctx.lineWidth = 2;
-    beginPath.call(ctx);
+    ctx.beginPath();
     drawLobes();
-    stroke.call(ctx);
+    ctx.stroke();
     ctx.restore();
 
     // Fill on top hides the internal seam strokes, leaving only the outer border visible
-    beginPath.call(ctx);
+    ctx.beginPath();
     drawLobes();
-    fill.call(ctx);
+    ctx.fill();
 }
 
 // Draws a striped red/white canopy across the top of the screen, made of alternating tabs rounded at the bottom
@@ -319,6 +289,12 @@ function drawCanopy (ctx, width, tabCount = 20, straightH = 34, roundH = 14) {
     const
         tabW = width / tabCount,
         r = tabW / 2;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+    ctx.shadowBlur = 3;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 3;
 
     for (let i = 0; i < tabCount; i += 1) {
         const x = i * tabW;
@@ -334,6 +310,8 @@ function drawCanopy (ctx, width, tabCount = 20, straightH = 34, roundH = 14) {
         ctx.closePath();
         ctx.fill();
     }
+
+    ctx.restore();
 }
 
 // Strokes an arm path (shoulder -> elbow -> hand) using the current strokeStyle/lineWidth
@@ -363,12 +341,6 @@ function drawIceCreamScoops (ctx, colors, yBase, step, r, xBase = 0) {
 // Draws simple eyes and a mouth matching an emoticon-style expression (":)", ":D", ":}", ":|", ":(")
 function drawFace (ctx, y, r, expression) {
     const
-        {
-            beginPath,
-            arc,
-            fill,
-            stroke
-        } = ctx,
         eyeOffsetX = r * 0.4,
         eyeR = max(1, r * 0.12),
         eyeY = y - r * 0.15,
@@ -376,18 +348,18 @@ function drawFace (ctx, y, r, expression) {
         mouthY = y + r * 0.25;
 
     ctx.fillStyle = COLORS[6];
-    beginPath.call(ctx);
-    arc.call(ctx, -eyeOffsetX, eyeY, eyeR, 0, PI * 2);
-    arc.call(ctx, eyeOffsetX, eyeY, eyeR, 0, PI * 2);
-    fill.call(ctx);
+    ctx.beginPath();
+    ctx.arc(-eyeOffsetX, eyeY, eyeR, 0, TAU);
+    ctx.arc(eyeOffsetX, eyeY, eyeR, 0, TAU);
+    ctx.fill();
 
     ctx.strokeStyle = COLORS[6];
     ctx.lineWidth = 1.5;
-    beginPath.call(ctx);
+    ctx.beginPath();
 
     (FACES[expression] || FACES.neutral)(ctx, eyeOffsetX, eyeR, eyeY, mouthW, mouthY, r);
 
-    stroke.call(ctx);
+    ctx.stroke();
 }
 
 // Computes shared body/head layout metrics for a person shape sized to fit within width/height
@@ -418,21 +390,16 @@ function drawPerson (ctx, width, height, color, stroke, expression) {
             bodyRy,
             headCenterY,
             headR
-        } = personLayout(width, height),
-        {
-            beginPath,
-            ellipse,
-            arc
-        } = ctx;
+        } = personLayout(width, height);
 
     setColorStyle(ctx, color, stroke || COLORS[6]);
 
-    beginPath.call(ctx);
-    ellipse.call(ctx, 0, bodyCenterY, bodyRx, bodyRy, 0, 0, PI * 2);
+    ctx.beginPath();
+    ctx.ellipse(0, bodyCenterY, bodyRx, bodyRy, 0, 0, TAU);
     fillStroke(ctx);
 
-    beginPath.call(ctx);
-    arc.call(ctx, 0, headCenterY, headR, 0, PI * 2);
+    ctx.beginPath();
+    ctx.arc(0, headCenterY, headR, 0, TAU);
     fillStroke(ctx);
 
     drawFace(ctx, headCenterY, headR, expression);
@@ -464,37 +431,30 @@ function drawSodaJerkHat (ctx, headCenterY, headR) {
         hatH = headR * 0.9,
         hatTopY = headCenterY - headR - hatH,
         hatY = headCenterY - headR,
-        topW = headR * 1.1,
-        {
-            beginPath,
-            moveTo,
-            lineTo,
-            quadraticCurveTo,
-            stroke
-        } = ctx;
+        topW = headR * 1.1;
 
     setColorStyle(ctx, COLORS[7], COLORS[6]);
 
-    beginPath.call(ctx);
-    moveTo.call(ctx, -baseW / 2, hatY);
-    lineTo.call(ctx, -topW / 2, hatTopY);
-    lineTo.call(ctx, topW / 2, hatTopY);
-    lineTo.call(ctx, baseW / 2, hatY);
+    ctx.beginPath();
+    ctx.moveTo(-baseW / 2, hatY);
+    ctx.lineTo(-topW / 2, hatTopY);
+    ctx.lineTo(topW / 2, hatTopY);
+    ctx.lineTo(baseW / 2, hatY);
     ctx.closePath();
     fillStroke(ctx);
 
     ctx.strokeStyle = roundColor()[1];
     ctx.lineWidth = 1;
 
-    beginPath.call(ctx);
-    moveTo.call(ctx, -baseW / 2, hatY);
-    quadraticCurveTo.call(ctx, 0, (hatY + hatTopY) / 2, 0, hatTopY);
-    stroke.call(ctx);
+    ctx.beginPath();
+    ctx.moveTo(-baseW / 2, hatY);
+    ctx.quadraticCurveTo(0, (hatY + hatTopY) / 2, 0, hatTopY);
+    ctx.stroke();
 
-    beginPath.call(ctx);
-    moveTo.call(ctx, baseW / 2, hatY);
-    quadraticCurveTo.call(ctx, 0, (hatY + hatTopY) / 2, 0, hatTopY);
-    stroke.call(ctx);
+    ctx.beginPath();
+    ctx.moveTo(baseW / 2, hatY);
+    ctx.quadraticCurveTo(0, (hatY + hatTopY) / 2, 0, hatTopY);
+    ctx.stroke();
 }
 
 // Draws a bow tie (two triangles + a center knot) just below the head
@@ -504,12 +464,7 @@ function drawBowTie (ctx, headCenterY, headR) {
         knotR = headR * 0.15 + 1,
         tieH = headR * 0.75,
         tieW = headR * 0.6,
-        tieY = headCenterY + headR * 1.1,
-        {
-            beginPath,
-            arc,
-            fill
-        } = ctx;
+        tieY = headCenterY + headR * 1.1;
 
     setColorStyle(ctx, color[0], color[1]);
 
@@ -517,9 +472,9 @@ function drawBowTie (ctx, headCenterY, headR) {
     drawTriangle(ctx, knotR, tieY, knotR + tieW, tieY - tieH / 2, knotR + tieW, tieY + tieH / 2, true);
 
     ctx.fillStyle = color[1];
-    beginPath.call(ctx);
-    arc.call(ctx, 0, tieY, knotR, 0, PI * 2);
-    fill.call(ctx);
+    ctx.beginPath();
+    ctx.arc(0, tieY, knotR, 0, TAU);
+    ctx.fill();
 }
 
 // Returns a fresh copy of the initial round/game state
@@ -535,9 +490,14 @@ function initialState () {
         inspector: null,
         inspectorCooldown: 0,
         maxAtOnce: 3,
+        newBest: false,
         onBreak: false,
         over: false,
         overTimer: 0,
+        receipt: {
+            items: [],
+            scroll: 0
+        },
         round: 1,
         roundColor: RAINBOW[0],
         score: 0,
@@ -549,26 +509,130 @@ function initialState () {
 
 // Reads the stored high score, updates it if beaten, and refreshes the UI text
 function updateHighScore () {
-    const stored = getStoreItem('unicorn_poop') || 0;
+    const stored = getStoreItem(STORAGE_KEY) || 0;
 
     if (game.score > stored) {
-        setStoreItem('unicorn_poop', game.score);
+        setStoreItem(STORAGE_KEY, game.score);
+        game.newBest = true;
     }
-
-    game.ui.highScore.text = `Best $${max(stored, game.score)}`;
 }
 
 // Clamps score to a minimum of 0, updates the score UI text, and refreshes the high score
 function setScore (value) {
     game.score = max(0, value);
-    game.ui.score.text = `$${game.score}`;
     updateHighScore();
+}
+
+/*
+ * Pushes a new charge/credit line onto the receipt; color is derived from the sign of the amount.
+ * Only keeps enough history to cover the visible list (plus one for the slide-in animation), since older
+ * entries scroll permanently off-screen and are never shown again.
+ */
+function addReceiptItem (label, amount) {
+    const
+        rowH = 18,
+        listH = canvas.height * 0.6 - 24 - 16,
+        maxItems = Math.ceil(listH / rowH) + 1;
+
+    game.receipt.items.push({
+        amount,
+        color: amount >= 0 ? RAINBOW[3][1] : RAINBOW[0][1],
+        label
+    });
+
+    if (game.receipt.items.length > maxItems) {
+        game.receipt.items.shift();
+    }
+
+    game.receipt.scroll = rowH;
+}
+
+// Draws the scrolling receipt panel flush to the top-right of the screen
+function renderReceipt (ctx) {
+    const
+        r = game.receipt,
+        w = canvas.width / 4,
+        h = canvas.height * 0.6,
+        x = canvas.width - w,
+        y = 0,
+        pad = 8,
+        rowH = 18,
+        totalH = 36,
+        tearCount = 10,
+        tearH = 6,
+        tearW = (canvas.width / 4) / tearCount,
+        lineY = y + h - totalH,
+        listTop = y + pad,
+        listH = lineY - listTop - pad,
+        listBottom = listTop + listH;
+
+    r.scroll += (0 - r.scroll) * 0.25;
+
+    ctx.save();
+    ctx.fillStyle = COLORS[7];
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + w, y);
+    ctx.lineTo(x + w, y + h - tearH);
+
+    for (let i = 0; i < tearCount; i += 1) {
+        const segX = x + w - i * tearW;
+
+        ctx.lineTo(segX - tearW / 2, y + h);
+        ctx.lineTo(segX - tearW, y + h - tearH);
+    }
+
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, listTop, w, listH);
+    ctx.clip();
+
+    ctx.font = '12px monospace';
+    ctx.textBaseline = 'middle';
+
+    r.items.forEach((item, i) => {
+        const itemY = listBottom - (r.items.length - 1 - i) * rowH - rowH / 2 + r.scroll;
+
+        if (itemY >= listTop - rowH && itemY <= listBottom + rowH) {
+            ctx.fillStyle = item.color;
+            ctx.textAlign = 'left';
+            ctx.fillText(item.label, x + pad, itemY);
+            ctx.textAlign = 'right';
+            ctx.fillText(`${item.amount >= 0 ? '+' : '-'}$${abs(item.amount)}`, x + w - pad, itemY);
+        }
+    });
+
+    ctx.restore();
+
+    ctx.strokeStyle = COLORS[8];
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x + pad, lineY);
+    ctx.lineTo(x + w - pad, lineY);
+    ctx.stroke();
+
+    ctx.fillStyle = COLORS[5];
+    ctx.font = 'bold 14px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('TOTAL', x + pad, lineY + pad + 6);
+
+    if (game.newBest) {
+        ctx.textAlign = 'center';
+        ctx.fillText('NEW BEST', x + w / 2, lineY + pad + 6);
+    }
+
+    ctx.textAlign = 'right';
+    ctx.fillText(`$${game.score}`, x + w - pad, lineY + pad + 6);
+    ctx.restore();
 }
 
 // Draws the soda shop / ice cream parlor letterboard splash screen
 function renderSplashBoard (ctx) {
     const
-        best = max(getStoreItem('unicorn_poop') || 0, game.score),
+        best = max(getStoreItem(STORAGE_KEY) || 0, game.score),
         boardW = canvas.width * 0.6,
         padX = 18,
         rowH = 12,
@@ -648,7 +712,7 @@ function renderSplashBoard (ctx) {
     // Ice cream cone with a scoop, in the top-right of the header, poking 1/3 of its length above the frame
     ctx.save();
     ctx.translate(coneX, coneCenterY + coneOffsetY);
-    ctx.rotate(30 * PI / 180);
+    ctx.rotate(PI / 6);
 
     ctx.fillStyle = COLORS[2];
     ctx.beginPath();
@@ -661,7 +725,7 @@ function renderSplashBoard (ctx) {
     // Scoop sitting on top of the cone
     ctx.fillStyle = SPLASH_SCOOP_COLOR[0];
     ctx.beginPath();
-    ctx.arc(0, coneTopY - coneCenterY, scoopR, 0, PI * 2);
+    ctx.arc(0, coneTopY - coneCenterY, scoopR, 0, TAU);
     ctx.fill();
     ctx.strokeStyle = SPLASH_SCOOP_COLOR[1];
     ctx.lineWidth = 2;
@@ -734,7 +798,7 @@ function tickPauseTimer (entity, dt, pausedMin, pausedRange, moveMin, moveRange)
         entity.paused = !entity.paused;
         entity.moveTimer = entity.paused
             ? pausedMin + rnd() * pausedRange
-            : moveMin + Number(rnd()) * moveRange;
+            : moveMin + rnd() * moveRange;
     }
 }
 
@@ -835,6 +899,7 @@ function dumpScoop () {
         y: game.player.y
     });
     setScore(game.score - 1);
+    addReceiptItem('Dropped Scoop', -1);
 }
 
 // Resets the game state and starts a new game loop
@@ -843,7 +908,6 @@ function resetGame () {
     spawnTimer = 0;
     game.player.x = canvas.width / 2;
     game.player.y = (UNICORN_Y + COUNTER_Y) / 2;
-    game.ui.score.text = '$0';
     updateHighScore();
 }
 
@@ -920,7 +984,7 @@ function spawnCustomer () {
         color: COLORS[7],
         dx: -speed,
         height,
-        moveTimer: 0.5 + Number(rnd()),
+        moveTimer: 0.5 + rnd(),
         paused: false,
         render () {
             const progress = ((canvas.width + 20) - this.x) / (canvas.width + 40);
@@ -981,17 +1045,25 @@ function tryAction () {
             const
                 progress = ((canvas.width + 20) - target.x) / (canvas.width + 40),
                 isHappy = target.annoyedTimer <= 0 && progress < 0.33,
-                payout = {
+                count = game.carrying.length,
+                base = {
                     1: 3,
                     2: 6,
                     3: 9
-                }[game.carrying.length] || 0 + (isHappy ? 1 : 0);
+                }[count] || 0,
+                tip = isHappy ? 1 : 0,
+                payout = base + tip;
 
             target.served = true;
             game.carrying = [];
             game.player.deliverTimer = 2.5;
             game.served += 1;
             setScore(game.score + payout);
+            addReceiptItem(`${count} scoop${count > 1 ? 's' : ''}`, base);
+
+            if (tip) {
+                addReceiptItem('Tip :)', tip);
+            }
 
             if (game.served >= game.target) {
                 advanceRound();
@@ -1051,7 +1123,7 @@ function trySpawnInspector (dt) {
             baseSpeed: 110,
             dirX: 1,
             height: 72,
-            moveTimer: 0.5 + Number(rnd()),
+            moveTimer: 0.5 + rnd(),
             paused: false,
             render () {
                 const {
@@ -1212,6 +1284,7 @@ game.loop = GameLoop({
         }
         context.fillStyle = COLORS[0];
         context.fillRect(0, 0, canvas.width, canvas.height);
+        renderReceipt(context);
         drawCanopy(context, canvas.width);
 
         // Draw dumped scoops left behind on the floor
@@ -1286,7 +1359,6 @@ game.loop = GameLoop({
             context.quadraticCurveTo(-muzzleBaseW / 2, 0, -muzzleBaseW / 2 + r, 0);
             context.closePath();
             context.fill();
-            context.fill();
             context.restore();
 
             // Eye (simple filled circle normally; squints to an X while the tail swing animation is active, i.e. when carrying a scoop)
@@ -1301,14 +1373,14 @@ game.loop = GameLoop({
             } else {
                 context.fillStyle = COLORS[6];
                 context.beginPath();
-                context.arc(eyeX, eyeY, eyeR, 0, PI * 2);
+                context.arc(eyeX, eyeY, eyeR, 0, TAU);
                 context.fill();
             }
 
             // Body (oval)
             setColorStyle(context, COLORS[7], COLORS[3]);
             context.beginPath();
-            context.ellipse(u.x, u.y, bodyRx, bodyRy, 0, 0, PI * 2);
+            context.ellipse(u.x, u.y, bodyRx, bodyRy, 0, 0, TAU);
             fillStroke(context);
 
             // Horn (centered on top of the head, narrower and lowered slightly)
@@ -1391,9 +1463,6 @@ game.loop = GameLoop({
         context.fillRect(0, COUNTER_TOP_Y, canvas.width, COUNTER_TOP_H);
 
         game.customers.forEach((c) => c.render());
-
-        game.ui.score.render();
-        game.ui.highScore.render();
 
         if (game.over) {
             game.ui.over.render();
@@ -1566,6 +1635,7 @@ game.loop = GameLoop({
                 }
 
                 setScore(game.score - 3);
+                addReceiptItem('Cleaning Fee', -3);
                 inspector.annoyedTimer = 2 + rnd();
 
                 return false;
@@ -1575,6 +1645,7 @@ game.loop = GameLoop({
             if (dist(game.player, inspector) < INSPECTOR_CATCH_R && game.carrying.length > 0) {
                 game.carrying = [];
                 setScore(game.score - 10);
+                addReceiptItem('Notice of Violation', -10);
 
                 game.inspector = null;
                 game.inspectorCooldown = INSPECTOR_COOLDOWN;
