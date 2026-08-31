@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <Folder Include="dist\" />
-    <Folder Include="modules\" />
     <Folder Include="assets\" />
     <Folder Include="zip\" />
     <Folder Include="src\images\" />
