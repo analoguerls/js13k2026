@@ -11,6 +11,7 @@ import {
     GameLoop,
     Sprite,
     Text,
+    clamp,
     gamepadAxis,
     getStoreItem,
     init,
@@ -198,11 +199,6 @@ window.addEventListener('gamepaddisconnected', (evt) => {
         cachedGamepadIndex = -1;
     }
 });
-
-// Clamps a value between min and max
-function clamp (v, lo, hi) {
-    return max(lo, min(hi, v));
-}
 
 // Decrements entity[key] by dt, clamped at 0
 function tickDown (entity, key, dt) {
@@ -1535,8 +1531,8 @@ game.loop = GameLoop({
             game.player.y += (dy / len) * PLAYER_SPEED * dt;
         }
 
-        game.player.x = clamp(game.player.x, 20, canvas.width - 20);
-        game.player.y = clamp(game.player.y, UNICORN_Y + PLAYER_REACH_Y, PLAYER_MAX_Y);
+        game.player.x = clamp(20, canvas.width - 20, game.player.x);
+        game.player.y = clamp(UNICORN_Y + PLAYER_REACH_Y, PLAYER_MAX_Y, game.player.y);
 
         // Jiggle physics: continuous sinusoidal squish, amplified while moving
         updateSquish(game.player, dt, dx || dy ? 0.1 : 0.04);
