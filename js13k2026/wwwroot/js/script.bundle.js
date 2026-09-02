@@ -46,7 +46,7 @@
    *
    * @returns {Number} Value clamped between min and max.
    */
-  function clamp$1(min, max, value) {
+  function clamp(min, max, value) {
     return Math.min(Math.max(min, value), max);
   }
 
@@ -1912,8 +1912,10 @@
           ['#CAF', '#408'],
           ['#DBF', '#93E']
       ],
+      SERVE_MESSAGES = ['DOO-LIVERED!', 'SCOOP THERE IT IS!'],
       SPLASH_SCOOP_COLOR = RAINBOW[floor(rnd() * RAINBOW.length)],
       SQUISH_LERP = 0.2,
+      STATUS_DURATION = 6,
       STORAGE_KEY = 'js13kpoopnscoop',
       TAIL_SWING_DURATION = 0.5,
       UNICORN_Y = 110,
@@ -1951,6 +1953,9 @@
               }),
               over: uiText({
                   text: 'THAT’S ONE WAY TO FLUSH A CAREER! PRESS N TO SCOOP AGAIN'
+              }),
+              status: uiText({
+                  text: ''
               })
           }
       },
@@ -1999,11 +2004,6 @@
           cachedGamepadIndex = -1;
       }
   });
-
-  // Clamps a value between min and max
-  function clamp (v, lo, hi) {
-      return max(lo, min(hi, v));
-  }
 
   // Decrements entity[key] by dt, clamped at 0
   function tickDown (entity, key, dt) {
@@ -2304,6 +2304,7 @@
           score: 0,
           served: 0,
           spills: [],
+          statusTimer: 0,
           target: 7
       };
   }
@@ -2687,6 +2688,13 @@
       return tMin <= tMax;
   }
 
+  // Shows a temporary status message in the same position as the break/game-over text
+  function showStatus(text) {
+      game.ui.status.text = text;
+      game.statusTimer = STATUS_DURATION;
+  }
+
+
   // Dumps one carried scoop at a time, charging $1 per scoop (clamped at 0)
   function dumpScoop () {
       if (game.over || !game.carrying.length) {
@@ -2701,6 +2709,7 @@
       });
       setScore(game.score - 1);
       addReceiptItem('Dropped Scoop', -1);
+      showStatus('SCOOP HAPPENS.');
   }
 
   // Resets the game state and starts a new game loop
@@ -2866,6 +2875,8 @@
                   addReceiptItem('Tip :)', tip);
               }
 
+              showStatus((tip ? 'CHA-CHING! ' : '') + SERVE_MESSAGES[floor(rnd() * SERVE_MESSAGES.length)]);
+
               if (game.served >= game.target) {
                   advanceRound();
               }
@@ -2967,6 +2978,7 @@
               y: rnd() < 0.5 ? UNICORN_Y + PLAYER_REACH_Y : PLAYER_MAX_Y,
               yDir: rnd() < 0.5 ? 1 : -1
           });
+          showStatus('IT’S THE HEALTH INSPECTOR! EVERYONE ACT NORMAL');
       }
   }
 
@@ -3008,6 +3020,7 @@
           };
 
           game.flies.radius = max(...game.flies.dots.map((d) => d.r));
+          showStatus('OH CRAP. WE’VE GOT FLIES!');
       }
   }
 
@@ -3269,6 +3282,8 @@
               game.ui.over.render();
           } else if (game.onBreak) {
               game.ui.break.render();
+          } else if (game.statusTimer > 0) {
+              game.ui.status.render();
           }
       },
       update (dt) {
@@ -3295,6 +3310,11 @@
               }
 
               return;
+          }
+
+
+          if (game.statusTimer > 0) {
+              tickDown(game, 'statusTimer', dt);
           }
 
           // Free player movement
@@ -3336,8 +3356,8 @@
               game.player.y += (dy / len) * PLAYER_SPEED * dt;
           }
 
-          game.player.x = clamp(game.player.x, 20, canvas.width - 20);
-          game.player.y = clamp(game.player.y, UNICORN_Y + PLAYER_REACH_Y, PLAYER_MAX_Y);
+          game.player.x = clamp(20, canvas.width - 20, game.player.x);
+          game.player.y = clamp(UNICORN_Y + PLAYER_REACH_Y, PLAYER_MAX_Y, game.player.y);
 
           // Jiggle physics: continuous sinusoidal squish, amplified while moving
           updateSquish(game.player, dt, dx || dy ? 0.1 : 0.04);
