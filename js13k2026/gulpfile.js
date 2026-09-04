@@ -17,6 +17,7 @@ import gulp from 'gulp';
 import minifyHTML from 'gulp-minify-html';
 import minifyJS from 'gulp-terser';
 import replace from 'gulp-replace';
+import through2 from 'through2';
 import zip from 'gulp-zip';
 
 const paths = {
@@ -108,6 +109,11 @@ gulp.task('zip', gulp.series('cleanZip', () => {
     }).
         pipe(zip('game.zip')).
         pipe(gulp.dest('zip')).
+        pipe(through2.obj((file, _, cb) => {
+            // eslint-disable-next-line no-console, no-undef
+            console.log(`Zipped size: ${file.contents.length} bytes (${(file.contents.length / 1024).toFixed(2)} KB / 13 KB limit)`);
+            cb(null, file);
+        })).
         pipe(checkFileSize({
             fileSizeLimit: thirteenKb
         }));

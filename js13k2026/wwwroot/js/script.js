@@ -41,6 +41,8 @@ const
     BOUNCE_AMPLITUDE = 3,
     BOUNCE_SPEED = 10,
     BREAK_MESSAGES = ['HUNGRY CUSTOMERS INCOMING. GET READY TO SCOOP THAT POOP!', 'FRESH POOP. HUNGRY CUSTOMERS. TASTE THE RAINBOW.', 'BUSINESS IS BOOMIN’ UNICORNS ARE POOPIN’ TIME TO GET SCOOPIN’'],
+    BROWN = ['#8B5A2B', '#4A2E12'],
+    CODE_BROWN = 'WE’VE GOT A CODE BROWN!',
     // Indices: 0 BACKGROUND, 1 CLIPBOARD, 2 CONE, 3 COUNTER_BASE, 4 COUNTER_TOP, 5 FLOOR, 6 GREY, 7 WHITE, 8 BLACK
     COLORS = [
         '#866F9B',
@@ -88,7 +90,6 @@ const
             ctx.arc(0, mouthY + r * 0.35, mouthW * 0.7, 1.15 * PI, 1.85 * PI);
         }
     },
-    CONTAMINATED_COLOR = ['#8B5A2B', '#4A2E12'],
     FAIL_MESSAGES = ['DOO-N’T SERVE THAT!', 'DOO OVER!', 'THAT WON’T DOO!'],
     FLY_CATCH_R = 6,
     FLY_COOLDOWN = 15,
@@ -103,6 +104,9 @@ const
     PLAYER_MAX_Y = COUNTER_TOP_Y + 24,
     PLAYER_REACH_Y = 60,
     PLAYER_SPEED = 260,
+    POOP_SERVE_CHANCE = 0.08,
+    POOP_SERVE_COOLDOWN = 25,
+    POOP_SERVE_MIN_ROUND = 4,
     RAINBOW = [
         // [fill, stroke]
         ['#FAA', '#F00'],
@@ -116,7 +120,7 @@ const
     SERVE_MESSAGES = ['DOO-LIVERED!', 'SCOOP THERE IT IS!', 'SCOOP-TACULAR!'],
     SPLASH_SCOOP_COLOR = RAINBOW[floor(rnd() * RAINBOW.length)],
     SQUISH_LERP = 0.2,
-    STATUS_DURATION = 4,
+    STATUS_DURATION = 3,
     STORAGE_KEY = 'js13kpoopnscoop',
     TAIL_SWING_DURATION = 0.5,
     UNICORN_Y = 110,
@@ -183,7 +187,7 @@ const
     }()),
     soundFx = (effect) => {
         if (audio[effect]) {
-            audio.zzfxP(audio[effect]);
+            audio.zzfx(...audio[effect]);
         }
     };
 
@@ -496,6 +500,7 @@ function initialState () {
         onBreak: false,
         over: false,
         overTimer: 0,
+        poopCooldown: 0,
         receipt: {
             items: [],
             scroll: 0
@@ -890,7 +895,7 @@ function sweptBoxHitsPoint (p, a, b, halfW, halfH) {
 }
 
 // Shows a temporary status message in the same position as the break/game-over text
-function showStatus(text) {
+function showStatus (text) {
     game.ui.status.text = text;
     game.statusTimer = STATUS_DURATION;
 }
@@ -908,9 +913,10 @@ function dumpScoop () {
         x: game.player.x,
         y: game.player.y
     });
-    setScore(game.score - 1);
     addReceiptItem('Dropped Scoop', -1);
+    setScore(game.score - 1);
     showStatus('SCOOP HAPPENS.');
+    soundFx('drop');
 }
 
 // Resets the game state and starts a new game loop
@@ -1069,15 +1075,13 @@ function tryAction () {
             game.carrying = [];
             game.player.deliverTimer = 2.5;
             game.served += 1;
-            setScore(game.score + payout);
             addReceiptItem(`${count} scoop${count > 1 ? 's' : ''}`, base);
-
             if (tip) {
                 addReceiptItem('Tip :)', tip);
             }
-
+            setScore(game.score + payout);
             showStatus((tip ? 'CHA-CHING! ' : '') + SERVE_MESSAGES[floor(rnd() * SERVE_MESSAGES.length)]);
-
+            soundFx('serve');
             if (game.served >= game.target) {
                 advanceRound();
             }
@@ -1088,6 +1092,7 @@ function tryAction () {
         if (wrongTarget) {
             wrongTarget.annoyedTimer = 2.5;
             showStatus(FAIL_MESSAGES[floor(rnd() * FAIL_MESSAGES.length)]);
+            soundFx('wrong');
         }
     }
 
@@ -1097,9 +1102,16 @@ function tryAction () {
     }, u) < PICKUP_R);
 
     if (unicorn && game.carrying.length < 3) {
-        game.carrying.push(unicorn.color);
+        const isBadScoop = game.round >= POOP_SERVE_MIN_ROUND && game.poopCooldown <= 0 && rnd() < POOP_SERVE_CHANCE;
+
+        game.carrying.push(isBadScoop ? BROWN : unicorn.color);
         unicorn.tailSwingTimer = TAIL_SWING_DURATION;
         soundFx('scoop');
+
+        if (isBadScoop) {
+            game.poopCooldown = POOP_SERVE_COOLDOWN;
+            showStatus(CODE_BROWN);
+        }
     }
 }
 
@@ -1223,6 +1235,7 @@ function trySpawnFlies (dt) {
 
         game.flies.radius = max(...game.flies.dots.map((d) => d.r));
         showStatus('OH CRAP. WE’VE GOT FLIES!');
+        soundFx('flies');
     }
 }
 
@@ -1519,6 +1532,10 @@ game.loop = GameLoop({
             tickDown(game, 'statusTimer', dt);
         }
 
+        if (game.poopCooldown > 0) {
+            tickDown(game, 'poopCooldown', dt);
+        }
+
         // Free player movement
         let dx = 0,
             dy = 0;
@@ -1667,9 +1684,10 @@ game.loop = GameLoop({
             // Catch the player: fine them $10 and confiscate their carried scoop
             if (dist(game.player, inspector) < INSPECTOR_CATCH_R && game.carrying.length > 0) {
                 game.carrying = [];
-                setScore(game.score - 10);
                 addReceiptItem('Notice of Violation', -10);
+                setScore(game.score - 10);
                 showStatus('YOU’RE IN DEEP DOO-DOO NOW!');
+                soundFx('caught');
 
                 game.inspector = null;
                 game.inspectorCooldown = INSPECTOR_COOLDOWN;
@@ -1699,7 +1717,11 @@ game.loop = GameLoop({
                 swarm.target = null;
                 swarm.hoverTimer = 0;
             } else if (swarm.target && dist(swarm, swarm.target) < 12) {
-                swarm.hoverTimer ||= FLY_HOVER_TIME;
+                if (!swarm.hoverTimer) {
+                    swarm.hoverTimer = FLY_HOVER_TIME;
+                    soundFx('flies');
+                }
+
                 tickDown(swarm, 'hoverTimer', dt);
 
                 if (swarm.hoverTimer <= 0) {
@@ -1723,10 +1745,10 @@ game.loop = GameLoop({
             }
 
             // Contaminate the top (most recently scooped) cone if any part of the player overlaps the swarm's spread
-            if (game.carrying.length && dist(game.player, swarm) < FLY_CATCH_R + swarm.radius + game.player.width / 2) {
-                game.carrying[game.carrying.length - 1] = CONTAMINATED_COLOR;
-                soundFx('contaminate');
-                showStatus('WE’VE GOT A CODE BROWN!');
+            if (game.carrying.length && game.carrying[game.carrying.length - 1] !== BROWN && dist(game.player, swarm) < FLY_CATCH_R + swarm.radius + game.player.width / 2) {
+                game.carrying[game.carrying.length - 1] = BROWN;
+                soundFx('flies');
+                showStatus(CODE_BROWN);
             }
 
             // Despawn once it has drifted off the left edge with nowhere left to go
