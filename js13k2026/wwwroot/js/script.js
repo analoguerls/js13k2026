@@ -42,7 +42,7 @@ const
     BOUNCE_SPEED = 10,
     BREAK_MESSAGES = ['HUNGRY CUSTOMERS INCOMING. GET READY TO SCOOP THAT POOP!', 'FRESH POOP. HUNGRY CUSTOMERS. TASTE THE RAINBOW.', 'BUSINESS IS BOOMIN’ UNICORNS ARE POOPIN’ TIME TO GET SCOOPIN’'],
     BROWN = ['#8B5A2B', '#4A2E12'],
-    CODE_BROWN = 'WE’VE GOT A CODE BROWN!',
+    CODE_BROWN = ['WE’VE GOT A CODE BROWN!', 'WE DON’T SERVE CHOCOLATE!'],
     // Indices: 0 BACKGROUND, 1 CLIPBOARD, 2 CONE, 3 COUNTER_BASE, 4 COUNTER_TOP, 5 FLOOR, 6 GREY, 7 WHITE, 8 BLACK
     COLORS = [
         '#866F9B',
@@ -97,7 +97,8 @@ const
     FLY_HOVER_TIME = 3,
     FLY_MIN_ROUND = 3,
     FLY_SPEED = 70,
-    GAME_OVER_DURATION = 12,
+    GAME_OVER = ['THE POOP HAS HIT THE FAN!', 'THAT’S ONE WAY TO FLUSH A CAREER!', 'WELL, THAT STINKS!'],
+    GAME_OVER_DURATION = 18,
     INSPECTOR_CATCH_R = 24,
     INSPECTOR_COOLDOWN = 20,
     PICKUP_R = 42,
@@ -135,7 +136,7 @@ const
         y: UNICORN_Y
     })),
     // Shared factory for UI text entries: defaults to white fill + centered anchor
-    uiText = (opts) => Text({
+    uiText = () => Text({
         anchor: {
             x: 0.5,
             y: 0.5
@@ -145,43 +146,48 @@ const
         textAlign: 'center',
         width: canvas.width - 20,
         x: canvas.width / 2,
-        y: canvas.height - COUNTER_BASE_H / 2,
-        ...opts
+        y: canvas.height - COUNTER_BASE_H / 2
     }),
     game = {
         loop: null,
         muted: false,
         started: false,
         ui: {
-            break: uiText({
-                text: BREAK_MESSAGES[0]
-            }),
-            over: uiText({
-                text: 'THAT’S ONE WAY TO FLUSH A CAREER! PRESS N TO SCOOP AGAIN'
-            }),
-            status: uiText({
-                text: ''
-            })
+            break: uiText(),
+            over: uiText(),
+            status: uiText()
         }
     },
     // Music controller to manage background music playback
     music = (function () {
-        let player = null;
+        let
+            player = null,
+            track = null;
 
         return {
-            start () {
-                if (player) {
-                    player.start();
-                } else {
-                    player = audio.zzfxP(...audio.song);
-                    player.loop = true;
+            play (name, loop = true) {
+                if (track === name) {
+                    if (player) {
+                        player.start();
+                    }
+
+                    return;
                 }
+
+                if (player) {
+                    player.stop();
+                }
+
+                track = name;
+                player = audio.zzfxP(...audio[name]);
+                player.loop = loop;
             },
             stop () {
                 if (player) {
                     player.stop();
                 }
                 player = null;
+                track = null;
             }
         };
     }()),
@@ -345,25 +351,42 @@ function drawIceCreamScoops (ctx, colors, yBase, step, r, xBase = 0) {
 }
 
 // Draws simple eyes and a mouth matching an emoticon-style expression (":)", ":D", ":}", ":|", ":(")
-function drawFace (ctx, y, r, expression) {
+function drawFace (ctx, y, r, expression, hasMustache) {
     const
         eyeOffsetX = r * 0.4,
         eyeR = max(1, r * 0.12),
         eyeY = y - r * 0.15,
         mouthW = r * 0.45,
-        mouthY = y + r * 0.25;
+        mouthY = y + r * 0.25,
+        mustacheHalfW = r * 0.75,
+        mustacheH = r * 0.36,
+        mustacheTipY = mouthY - r * (expression === 'delighted' ? 0.30 : 0.15),
+        mustacheBaseY = mustacheTipY + mustacheH;
 
+    // Eyes
     ctx.fillStyle = COLORS[6];
     ctx.beginPath();
     ctx.arc(-eyeOffsetX, eyeY, eyeR, 0, TAU);
     ctx.arc(eyeOffsetX, eyeY, eyeR, 0, TAU);
     ctx.fill();
 
+    if (hasMustache) {
+        // Mustache: wide, short filled triangle with the tip under the nose and sides sticking out
+        ctx.beginPath();
+        ctx.moveTo(0, mustacheTipY);
+        ctx.lineTo(-mustacheHalfW, mustacheBaseY);
+        ctx.lineTo(mustacheHalfW, mustacheBaseY);
+        ctx.closePath();
+        ctx.fill();
+    }
+
     ctx.strokeStyle = COLORS[6];
     ctx.lineWidth = 1.5;
     ctx.beginPath();
 
-    (FACES[expression] || FACES.neutral)(ctx, eyeOffsetX, eyeR, eyeY, mouthW, mouthY, r);
+    if (!hasMustache || expression === 'delighted') {
+        (FACES[expression] || FACES.neutral)(ctx, eyeOffsetX, eyeR, eyeY, mouthW, mouthY, r);
+    }
 
     ctx.stroke();
 }
@@ -388,7 +411,7 @@ function personLayout (width, height) {
 }
 
 // Draws a person shape (oval body + circle head) sized to fit within width/height, returns head position for further drawing
-function drawPerson (ctx, width, height, color, stroke, expression) {
+function drawPerson (ctx, width, height, color, stroke, expression, hasMustache) {
     const
         {
             bodyCenterY,
@@ -408,7 +431,7 @@ function drawPerson (ctx, width, height, color, stroke, expression) {
     ctx.arc(0, headCenterY, headR, 0, TAU);
     fillStroke(ctx);
 
-    drawFace(ctx, headCenterY, headR, expression);
+    drawFace(ctx, headCenterY, headR, expression, hasMustache);
 
     return {
         headCenterY,
@@ -692,13 +715,17 @@ function renderSplashBoard (ctx) {
         coneCenterY = (coneTopY + coneTipY) / 2;
     let rowY = boardY + rowH / 2;
 
-    // Shadow rectangle, offset for depth
-    ctx.fillStyle = COLORS[5];
-    ctx.fillRect(boardX - 3 + 6, boardY - 3 + 6, boardW + 6, boardH + 6);
+    // Drop shadow for depth
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 6;
+    ctx.shadowOffsetX = 6;
+    ctx.shadowOffsetY = 6;
 
     // Board frame
     ctx.fillStyle = fontColor;
     ctx.fillRect(boardX - 3, boardY - 3, boardW + 6, boardH + 6);
+    ctx.restore();
     ctx.fillStyle = COLORS[7];
     ctx.fillRect(boardX, boardY, boardW, boardH);
 
@@ -830,6 +857,9 @@ function advanceRound () {
     game.customers = [];
     game.inspector = null;
     game.inspectorCooldown = INSPECTOR_COOLDOWN;
+    game.flies = null;
+    game.statusTimer = 0;
+    game.ui.status.text = '';
     game.onBreak = true;
     game.breakTimer = 7;
     game.roundColor = roundColor();
@@ -933,10 +963,13 @@ function restart () {
     if (!game.started) {
         game.started = true;
         if (!game.muted) {
-            music.start();
+            music.play('song');
         }
     } else if (game.over) {
         resetGame();
+        if (!game.muted) {
+            music.play('song', false);
+        }
     }
 }
 
@@ -988,7 +1021,7 @@ function spawnCustomer () {
     const
         height = 60 + rnd() * 18,
         multiplier = 1 + 0.1 * min(game.round - 1, 9),
-        speed = (35 + rnd() * 20) * multiplier,
+        speed = (45 + rnd() * 20) * multiplier,
         wants = pickWantColors(rollScoopCount());
 
     game.customers.push(Sprite({
@@ -1043,8 +1076,9 @@ function toggleMute () {
 
     if (game.muted) {
         music.stop();
-    } else if (game.started) {
-        music.start();
+    } else {
+        // eslint-disable-next-line no-negated-condition, no-nested-ternary
+        music.play(!game.started ? 'splash' : game.over ? 'over' : 'song', !game.over);
     }
 }
 
@@ -1110,7 +1144,7 @@ function tryAction () {
 
         if (isBadScoop) {
             game.poopCooldown = POOP_SERVE_COOLDOWN;
-            showStatus(CODE_BROWN);
+            showStatus(CODE_BROWN[floor(rnd() * CODE_BROWN.length)]);
         }
     }
 }
@@ -1192,7 +1226,7 @@ function trySpawnInspector (dt) {
             y: rnd() < 0.5 ? UNICORN_Y + PLAYER_REACH_Y : PLAYER_MAX_Y,
             yDir: rnd() < 0.5 ? 1 : -1
         });
-        showStatus('IT’S THE HEALTH INSPECTOR! EVERYONE ACT NORMAL');
+        showStatus('UH-OH! THE HEALTH INSPECTOR IS HERE!');
     }
 }
 
@@ -1234,7 +1268,7 @@ function trySpawnFlies (dt) {
         };
 
         game.flies.radius = max(...game.flies.dots.map((d) => d.r));
-        showStatus('OH CRAP. WE’VE GOT FLIES!');
+        showStatus('OH NO! WE’RE ATTRACTING FLIES!');
         soundFx('flies');
     }
 }
@@ -1270,7 +1304,7 @@ game.player = Sprite({
         const {
             headCenterY,
             headR
-        } = drawPerson(this.context, this.width, this.height, this.color, COLORS[6], this.deliverTimer > 0 ? 'delighted' : 'happy');
+        } = drawPerson(this.context, this.width, this.height, this.color, COLORS[6], this.deliverTimer > 0 ? 'delighted' : 'happy', true);
 
         drawSodaJerkHat(this.context, headCenterY, headR);
         drawBowTie(this.context, headCenterY, headR);
@@ -1512,6 +1546,9 @@ game.loop = GameLoop({
             if (game.overTimer <= 0) {
                 resetGame();
                 game.started = false;
+                if (!game.muted) {
+                    music.play('splash');
+                }
             }
 
             return;
@@ -1523,8 +1560,6 @@ game.loop = GameLoop({
             if (game.breakTimer <= 0) {
                 game.onBreak = false;
             }
-
-            return;
         }
 
 
@@ -1597,7 +1632,7 @@ game.loop = GameLoop({
         spawnTimer += dt;
         game.elapsed += dt;
 
-        if (game.customers.length < game.maxAtOnce && spawnTimer > spawnInterval) {
+        if (!game.onBreak && game.customers.length < game.maxAtOnce && spawnTimer > spawnInterval) {
             spawnTimer = 0;
             spawnCustomer();
         }
@@ -1633,7 +1668,9 @@ game.loop = GameLoop({
         }
 
         // Spawn and move the health inspector
-        trySpawnInspector(dt);
+        if (!game.onBreak) {
+            trySpawnInspector(dt);
+        }
 
         if (game.inspector) {
             const
@@ -1675,7 +1712,7 @@ game.loop = GameLoop({
                 }
 
                 setScore(game.score - 3);
-                addReceiptItem('Cleaning Fee', -3);
+                addReceiptItem('Sanitation Violation', -3);
                 inspector.annoyedTimer = 2 + rnd();
 
                 return false;
@@ -1684,9 +1721,9 @@ game.loop = GameLoop({
             // Catch the player: fine them $10 and confiscate their carried scoop
             if (dist(game.player, inspector) < INSPECTOR_CATCH_R && game.carrying.length > 0) {
                 game.carrying = [];
-                addReceiptItem('Notice of Violation', -10);
+                addReceiptItem('Food Safety Violation', -10);
                 setScore(game.score - 10);
-                showStatus('YOU’RE IN DEEP DOO-DOO NOW!');
+                showStatus('VIOLATION! THIS DOO ISN’T FDA APPROVED!');
                 soundFx('caught');
 
                 game.inspector = null;
@@ -1702,7 +1739,9 @@ game.loop = GameLoop({
         }
 
         // Move/update the fly swarm: seek the next un-visited spill, hover over it, then despawn off-screen
-        trySpawnFlies(dt);
+        if (!game.onBreak) {
+            trySpawnFlies(dt);
+        }
 
         if (game.flies) {
             const swarm = game.flies;
@@ -1748,7 +1787,7 @@ game.loop = GameLoop({
             if (game.carrying.length && game.carrying[game.carrying.length - 1] !== BROWN && dist(game.player, swarm) < FLY_CATCH_R + swarm.radius + game.player.width / 2) {
                 game.carrying[game.carrying.length - 1] = BROWN;
                 soundFx('flies');
-                showStatus(CODE_BROWN);
+                showStatus(CODE_BROWN[floor(rnd() * CODE_BROWN.length)]);
             }
 
             // Despawn once it has drifted off the left edge with nowhere left to go
@@ -1758,12 +1797,14 @@ game.loop = GameLoop({
             }
         }
 
-
         // Losing a single customer past the counter ends the game
         if (game.customers.some((c) => !c.served && c.x <= -20)) {
             game.over = true;
             game.overTimer = GAME_OVER_DURATION;
-            music.stop();
+            game.ui.over.text = `${GAME_OVER[floor(rnd() * GAME_OVER.length)]} PRESS N TO SCOOP AGAIN`;
+            if (!game.muted) {
+                music.play('over', false);
+            }
         } else {
             game.customers = game.customers.filter((c) => !c.served);
         }

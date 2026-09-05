@@ -1789,37 +1789,43 @@
   const
 
       // zzfx() - the universal entry point -- returns a AudioBufferSourceNode
-      zzfx=(...t)=>zzfxP(zzfxG(...t)),
+      zzfx = (...t) => zzfxP(zzfxG(...t)),
 
       // zzfxP() - the sound player -- returns a AudioBufferSourceNode
-      zzfxP=(...t)=>{let e=zzfxX.createBufferSource(),f=zzfxX.createBuffer(t.length,t[0].length,zzfxR);t.map((d,i)=>f.getChannelData(i).set(d)),e.buffer=f,e.connect(zzfxX.destination),e.start();return e},
+      zzfxP = (...t) => { let e = zzfxX.createBufferSource(), f = zzfxX.createBuffer(t.length, t[0].length, zzfxR); t.map((d, i) => f.getChannelData(i).set(d)), e.buffer = f, e.connect(zzfxX.destination), e.start(); return e },
 
       // zzfxG() - the sound generator -- returns an array of sample data
-      zzfxG=(q=1,k=.05,c=220,e=0,t=0,u=.1,r=0,F=1,v=0,z=0,w=0,A=0,l=0,B=0,x=0,G=0,d=0,y=1,m=0,C=0)=>{let b=2*Math.PI,H=v*=500*b/zzfxR**2,I=(0<x?1:-1)*b/4,D=c*=(1+2*k*Math.random()-k)*b/zzfxR,Z=[],g=0,E=0,a=0,n=1,J=0,K=0,f=0,p,h;e=99+zzfxR*e;m*=zzfxR;t*=zzfxR;u*=zzfxR;d*=zzfxR;z*=500*b/zzfxR**3;x*=b/zzfxR;w*=b/zzfxR;A*=zzfxR;l=zzfxR*l|0;for(h=e+m+t+u+d|0;a<h;Z[a++]=f)++K%(100*G|0)||(f=r?1<r?2<r?3<r?Math.sin((g%b)**3):Math.max(Math.min(Math.tan(g),1),-1):1-(2*g/b%2+2)%2:1-4*Math.abs(Math.round(g/b)-g/b):Math.sin(g),f=(l?1-C+C*Math.sin(2*Math.PI*a/l):1)*(0<f?1:-1)*Math.abs(f)**F*q*zzfxV*(a<e?a/e:a<e+m?1-(a-e)/m*(1-y):a<e+m+t?y:a<h-d?(h-a-d)/u*y:0),f=d?f/2+(d>a?0:(a<h-d?1:(h-a)/d)*Z[a-d|0]/2):f),p=(c+=v+=z)*Math.sin(E*x-I),g+=p-p*B*(1-1E9*(Math.sin(a)+1)%2),E+=p-p*B*(1-1E9*(Math.sin(a)**2+1)%2),n&&++n>A&&(c+=w,D+=w,n=0),!l||++J%l||(c=D,v=H,n=n||1);return Z},
+      zzfxG = (q = 1, k = .05, c = 220, e = 0, t = 0, u = .1, r = 0, F = 1, v = 0, z = 0, w = 0, A = 0, l = 0, B = 0, x = 0, G = 0, d = 0, y = 1, m = 0, C = 0) => { let b = 2 * Math.PI, H = v *= 500 * b / zzfxR ** 2, I = (0 < x ? 1 : -1) * b / 4, D = c *= (1 + 2 * k * Math.random() - k) * b / zzfxR, Z = [], g = 0, E = 0, a = 0, n = 1, J = 0, K = 0, f = 0, p, h; e = 99 + zzfxR * e; m *= zzfxR; t *= zzfxR; u *= zzfxR; d *= zzfxR; z *= 500 * b / zzfxR ** 3; x *= b / zzfxR; w *= b / zzfxR; A *= zzfxR; l = zzfxR * l | 0; for (h = e + m + t + u + d | 0; a < h; Z[a++] = f)++K % (100 * G | 0) || (f = r ? 1 < r ? 2 < r ? 3 < r ? Math.sin((g % b) ** 3) : Math.max(Math.min(Math.tan(g), 1), -1) : 1 - (2 * g / b % 2 + 2) % 2 : 1 - 4 * Math.abs(Math.round(g / b) - g / b) : Math.sin(g), f = (l ? 1 - C + C * Math.sin(2 * Math.PI * a / l) : 1) * (0 < f ? 1 : -1) * Math.abs(f) ** F * q * zzfxV * (a < e ? a / e : a < e + m ? 1 - (a - e) / m * (1 - y) : a < e + m + t ? y : a < h - d ? (h - a - d) / u * y : 0), f = d ? f / 2 + (d > a ? 0 : (a < h - d ? 1 : (h - a) / d) * Z[a - d | 0] / 2) : f), p = (c += v += z) * Math.sin(E * x - I), g += p - p * B * (1 - 1E9 * (Math.sin(a) + 1) % 2), E += p - p * B * (1 - 1E9 * (Math.sin(a) ** 2 + 1) % 2), n && ++n > A && (c += w, D += w, n = 0), !l || ++J % l || (c = D, v = H, n = n || 1); return Z },
 
       // zzfxV - global volume
-      zzfxV=.1,
+      zzfxV = .1,
 
       // zzfxR - global sample rate
-      zzfxR=44100,
+      zzfxR = 44100,
 
       // zzfxX - the common audio context
-      zzfxX=new(window.AudioContext||webkitAudioContext),
+      zzfxX = new (window.AudioContext || webkitAudioContext),
 
       //! ZzFXM (v2.0.3) | (C) Keith Clark | MIT | https://github.com/keithclark/ZzFXM
-      zzfxM=(n,f,t,e=125)=>{let l,o,z,r,g,h,x,a,u,c,i,m,p,G,M=0,R=[],b=[],j=[],k=0,q=0,s=1,v={},w=zzfxR/e*60>>2;for(;s;k++)R=[s=a=m=0],t.map((e,d)=>{for(x=f[e][k]||[0,0,0],s|=!!f[e][k],G=m+(f[e][0].length-2-!a)*w,p=d==t.length-1,o=2,r=m;o<x.length+p;a=++o){for(g=x[o],u=o==x.length+p-1&&p||c!=(x[0]||0)|g|0,z=0;z<w&&a;z++>w-99&&u?i+=(i<1)/99:0)h=(1-i)*R[M++]/2||0,b[r]=(b[r]||0)-h*q+h,j[r]=(j[r++]||0)+h*q+h;g&&(i=g%1,q=x[1]||0,(g|=0)&&(R=v[[c=x[M=0]||0,g]]=v[[c,g]]||(l=[...n[c]],l[2]*=2**((g-12)/12),g>0?zzfxG(...l):[])));}m=G;});return [b,j]},
+      zzfxM = (n, f, t, e = 125) => { let l, o, z, r, g, h, x, a, u, c, i, m, p, G, M = 0, R = [], b = [], j = [], k = 0, q = 0, s = 1, v = {}, w = zzfxR / e * 60 >> 2; for (; s; k++)R = [s = a = m = 0], t.map((e, d) => { for (x = f[e][k] || [0, 0, 0], s |= !!f[e][k], G = m + (f[e][0].length - 2 - !a) * w, p = d == t.length - 1, o = 2, r = m; o < x.length + p; a = ++o) { for (g = x[o], u = o == x.length + p - 1 && p || c != (x[0] || 0) | g | 0, z = 0; z < w && a; z++ > w - 99 && u ? i += (i < 1) / 99 : 0)h = (1 - i) * R[M++] / 2 || 0, b[r] = (b[r] || 0) - h * q + h, j[r] = (j[r++] || 0) + h * q + h; g && (i = g % 1, q = x[1] || 0, (g |= 0) && (R = v[[c = x[M = 0] || 0, g]] = v[[c, g]] || (l = [...n[c]], l[2] *= 2 ** ((g - 12) / 12), g > 0 ? zzfxG(...l) : []))); } m = G; }); return [b, j] },
 
-      song = zzfxM(...[[[.6, 0, 124, .02, .05, .18, 3, , , , , , , , , , , , .03], [3, 0, 10, , , .2, 3, , , , , , , 3, , 1], [2.5, 0, 219, , , , 4, 1.1, , -0.1, -50, -0.05, -0.01, 2, , .1], [2.5, 0, 248, .01, .15, .15, 2, .5, , , , , 154.87, , 1.1, , .5, , , .2], [3, 0, 31, .01, .12, .25, 3, , , , , , , , , , .01], [1.6, 0, 248, .01, .15, .5, , .1, , , , , , .1, 1, , .06, 1.1, .05, .03]], [[[4, , 21, , , , , , , , 19, , 21, , 22, , , , , , , , 21, , 22, , 23, , , , , , , , 22, , 23, , 24, , , , 24, , , , 24, , , ,], [, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 19, , 19, , 19, , 19, , 19, , 19, , 19, , 19, , 19, , 22, , 22, , 22, ,], [, , 24, , 24, , 24, , 24, , 24, , 24, , 25, , 25, , 25, , 25, , 25, , 25, , 26, , 26, , 26, , 26, , 26, , 26, , 28, , 28, , 28, , 28, , 28, , 28, ,], [1, , 17, , , , , , , , , , 17, , 17, , , , 17, , , , , , , , 17, , , , , , , , , , 17, , 17, , , , 17, , , , 17, , , ,], [2, , , , , , , , 29, , , , , , , , , , , , 29, , , , , , , , , , , , 29, , , , , , , , , , , , 29, , , , 29, 29], [5, , 17, , , , , , 16, , , , , , 17, , , , , , 19, , , , , , 21, , , , , , 17, , , , , , 14, , , , , , 12, , , , , ,], [3, , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , ,]], [[4, , 17, , , , , , , , 17, , 16, , 14, , , , , , , , 14, , 17, , 19, , , , , , , , 19, , 17, , 16, , , , , , 16, , 17, , 19, ,], [, , 21, , 21, , 21, , 21, , 21, , 21, , 17, , 17, , 17, , 17, , 17, , 17, , 22, , 22, , 22, , 22, , 22, , 22, , 19, , 19, , 19, , 19, , 19, , 19, ,], [, , 24, , 24, , 24, , 24, , 24, , 24, , 21, , 21, , 21, , 21, , 21, , 21, , 26, , 26, , 26, , 26, , 26, , 26, , 24, , 24, , 24, , 24, , 24, , 24, ,], [1, , 17, , , , , , , , , , 17, , 17, , , , 17, , , , , , , , 17, , , , , , , , , , 17, , 17, , , , 17, , , , , , 17, ,], [2, , , , , , , , 29, , , , , , , , , , , , 29, , , , , , , , , , , , 29, , , , , , , , , , , , 29, , , , , ,], [5, , 17, , , , , , 12, , , , , , 9, , , , , , 17, , , , , , 14, , , , , , 17, , , , , , 16, , , , , , 12, , , , , ,], [3, , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , ,]], [[4, , 17, , , , , , , , 17, , 16, , 14, , , , , , , , 14, , 17, , 19, , , , , , , , 19, , 17, , 16, , , , , , 16, , 17, , 19, ,], [, , 21, , 21, , 21, , 21, , 21, , 21, , 17, , 17, , 17, , 17, , 17, , 17, , 22, , 22, , 22, , 22, , 22, , 22, , 19, , 19, , 19, , 19, , 19, , 19, ,], [, , 24, , 24, , 24, , 24, , 24, , 24, , 21, , 21, , 21, , 21, , 21, , 21, , 26, , 26, , 26, , 26, , 26, , 26, , 24, , 24, , 24, , 24, , 24, , 24, ,], [1, , 17, , , , , , , , , , 17, , 17, , , , 17, , , , , , , , 17, , , , , , , , , , 17, , 17, , , , 17, , , , , , 17, ,], [2, , , , , , , , 29, , , , , , , , , , , , 29, , , , , , , , , , , , 29, , , , , , , , , , , , 29, , , , , ,], [5, , 17, , , , , , 12, , , , , , 9, , , , , , 17, , , , , , 14, , , , , , 17, , , , , , 16, , , , , , 12, , , , , ,], [3, , 33, , 29, , 31, , 26, , 29, , 24, , 26, , , , , , , , 36, , 34, , 33, , , , , , , , , , 34, , 33, , , , , , 31, , , , , ,]], [[4, , 21, , , , , , , , 19, , 21, , 22, , , , , , , , 21, , 22, , 23, , , , , , , , 22, , 23, , 24, , , , 24, , , , 24, , , ,], [, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 17, , 19, , 19, , 19, , 19, , 19, , 19, , 19, , 19, , 19, , 22, , 22, , 22, ,], [, , 24, , 24, , 24, , 24, , 24, , 24, , 25, , 25, , 25, , 25, , 25, , 25, , 26, , 26, , 26, , 26, , 26, , 26, , 28, , 28, , 28, , 28, , 28, , 28, ,], [1, , 17, , , , , , , , , , 17, , 17, , , , 17, , , , , , , , 17, , , , , , , , , , 17, , 17, , , , 17, , , , 17, , , ,], [2, , , , , , , , 29, , , , , , , , , , , , 29, , , , , , , , , , , , 29, , , , , , , , , , , , 29, , , , 29, 29], [5, , 17, , , , , , 16, , , , , , 17, , , , , , 19, , , , , , 21, , , , , , 17, , , , , , 14, , , , , , 12, , , , , ,], [3, , 33, , 34, , 33, , 31, , 33, , 31, , 29, , , , , , , , 31, , 33, , 31, , , , , , , , 26, , 28, , 29, , , , , , 31, , , , , ,]], [[4, , 19, , , , 14, , , , 19, , 17, , 19, , , , 14, , , , 19, , 17, , 15, , , , 10, , , , 15, , 14, , 15, , , , 10, , , , 15, , 17, ,], [, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, ,], [, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, ,], [1, , 17, , , , , , , , , , , , , , , , , , , , , , , , 17, , , , , , , , , , , , , , , , , , , , , , , ,], [2, , 29, , , , , , , , , , , , , , , , , , , , , , 29, 29, 29, , , , , , , , , , , , , , , , , , , , , , 29, 29], [5, , 19, , , , , , 14, , , , , , 10, , , , , , 19, , , , , , 15, , , , , , 17, , , , , , 15, , , , , , 14, , , , , ,], [3, , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , , ,]], [[4, , 19, , , , 14, , , , 19, , 17, , 19, , , , 14, , , , 19, , 17, , 15, , , , 10, , , , 15, , 14, , 12, , , , 12, , , , 14, , 16, ,], [, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, , 22, ,], [, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 26, , 29, , 29, , 29, , 28, , 28, , 28, ,], [1, , 17, , , , , , , , , , , , , , , , , , , , , , , , 17, , , , , , , , , , , , 17, , , , , , 17, , 17, , 17, ,], [2, , 29, , , , , , , , , , , , , , , , , , , , , , 29, 29, 29, , , , , , , , , , 29, 29, 29, , , , , , 29, , 29, , 29, 29], [5, , 19, , , , , , 14, , , , , , 10, , , , , , 19, , , , , , 15, , , , , , 17, , , , , , 19, , , , , , 17, , , , , ,], [3, , 33, , 29, , 31, , 26, , 29, , 24, , 26, , , , , , , , 36, , 34, , 33, , , , , , , , , , 34, , 33, , , , , , 31, , , , , ,]]], [1, 0, 2, 3, 4, 4, 5], , { "title": "UniWop", "instruments": ["Piano", "Kick", "Snare", "Lead", "Bass", "Flute"], "patterns": ["Main 2", "Main 1", "Lead 1", "Lead 2", "Bridge 1", "Bridge 2"] }]),
+      // Music
+      over = zzfxM(...[[[,0,124,,.1,.5,3,,,,,,,,,,.1],[.3,0,900,.02,,.07,4,0,,,,,,4],[2,0,4e3,,,.03,2,1.25,,,,,.02,6.8,-0.3,,.5]],[[[,-1,2,,,,,,9,,14,,9,,,,,,5,,,,,,12,,17,,12,,5,,,,10,,,,,,12,,10,,5,,,,,,7,,,,,,9,,17,,16,,12,,5,,],[,1,29,,31,,33,,,,,,,,29,,,,28,,,,,,,,,,,,,,,,26,,28,,29,,,,,,,,26,,,,24,,,,,,,,,,,,,,,,],[,-1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,],[1,1,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,],[2,,,,,,,,,,,,17,,,,17,,,,,,,,,,,,17,17,,,17,,,,,,,,,,,,17,,,,17,,,,,,,,,,,,17,17,,,17,,]],[[,-1,2,,,,,,9,,14,,9,,,,,,5,,,,,,12,,17,,12,,5,,,,10,,,,,,12,,10,,5,,,,,,7,,,,,,9,,17,,16,,12,,5,,],[,1,29,,31,,33,,,,,,,,36,,,,33,,,,,,,,,,,,,,,,26,,28,,29,,,,,,,,33,,,,34,,,,,,33,,31,,,,28,,,,],[,-1,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,24,,,,26,,,,,,24,,22,,,,19,,,,],[1,1,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,17,,,,],[2,,,,,,,,,,,,17,,,,17,,,,,,,17,17,17,,,17,17,,,17,,,,,,,,,,,,17,,,,17,,,,,,,17,17,17,,,17,17,,,17,17]]],[0,1],115,{"title":"UniEnd","instruments":["Piano","Shaker","Hihat"],"patterns":["Pattern 0","Pattern 1"]}]),
 
-      caught = [1.5,,365,.01,.11,.05,,2.2,,-48,,,,.1,,.1,.16,.71,.05,,389],
+      song = zzfxM(...[[[.6,0,124,.02,.05,.18,3,,,,,,,,,,,,.03],[3,0,10,,,.2,3,,,,,,,3,,1],[2.5,0,219,,,,4,1.1,,-0.1,-50,-0.05,-0.01,2,,.1],[2.5,0,248,.01,.15,.15,2,.5,,,,,154.87,,1.1,,.5,,,.2],[3,0,31,.01,.12,.25,3,,,,,,,,,,.01],[1.6,0,248,.01,.15,.5,,.1,,,,,,.1,1,,.06,1.1,.05,.03],[.3,0,900,.02,,.07,4,0,,,,,,4],[2,0,4e3,,,.03,2,1.25,,,,,.02,6.8,-0.3,,.5]],[[[4,,21,,,,,,,,19,,21,,22,,,,,,,,21,,22,,23,,,,,,,,22,,23,,24,,,,24,,,,24,,,,],[,,17,,17,,17,,17,,17,,17,,17,,17,,17,,17,,17,,17,,19,,19,,19,,19,,19,,19,,19,,19,,19,,22,,22,,22,,],[,,24,,24,,24,,24,,24,,24,,25,,25,,25,,25,,25,,25,,26,,26,,26,,26,,26,,26,,28,,28,,28,,28,,28,,28,,],[1,,17,,,,,,,,,,17,,17,,,,17,,,,,,,,17,,,,,,,,,,17,,17,,,,17,,,,17,,,,],[2,,,,,,,,29,,,,,,,,,,,,29,,,,,,,,,,,,29,,,,,,,,,,,,29,,,,29,29],[5,,17,,,,,,16,,,,,,17,,,,,,19,,,,,,21,,,,,,17,,,,,,14,,,,,,12,,,,,,],[3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]],[[4,,17,,,,,,,,17,,16,,14,,,,,,,,14,,17,,19,,,,,,,,19,,17,,16,,,,,,16,,17,,19,,],[,,21,,21,,21,,21,,21,,21,,17,,17,,17,,17,,17,,17,,22,,22,,22,,22,,22,,22,,19,,19,,19,,19,,19,,19,,],[,,24,,24,,24,,24,,24,,24,,21,,21,,21,,21,,21,,21,,26,,26,,26,,26,,26,,26,,24,,24,,24,,24,,24,,24,,],[1,,17,,,,,,,,,,17,,17,,,,17,,,,,,,,17,,,,,,,,,,17,,17,,,,17,,,,,,17,,],[2,,,,,,,,29,,,,,,,,,,,,29,,,,,,,,,,,,29,,,,,,,,,,,,29,,,,,,],[5,,17,,,,,,12,,,,,,9,,,,,,17,,,,,,14,,,,,,17,,,,,,16,,,,,,12,,,,,,],[3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,]],[[4,,17,,,,,,,,17,,16,,14,,,,,,,,14,,17,,19,,,,,,,,19,,17,,16,,,,,,16,,17,,19,,],[,,21,,21,,21,,21,,21,,21,,17,,17,,17,,17,,17,,17,,22,,22,,22,,22,,22,,22,,19,,19,,19,,19,,19,,19,,],[,,24,,24,,24,,24,,24,,24,,21,,21,,21,,21,,21,,21,,26,,26,,26,,26,,26,,26,,24,,24,,24,,24,,24,,24,,],[1,,17,,,,,,,,,,17,,17,,,,17,,,,,,,,17,,,,,,,,,,17,,17,,,,17,,,,,,17,,],[2,,,,,,,,29,,,,,,,,,,,,29,,,,,,,,,,,,29,,,,,,,,,,,,29,,,,,,],[5,,17,,,,,,12,,,,,,9,,,,,,17,,,,,,14,,,,,,17,,,,,,16,,,,,,12,,,,,,],[3,,33,,29,,31,,26,,29,,24,,26,,,,,,,,36,,34,,33,,,,,,,,,,34,,33,,,,,,31,,,,,,]],[[4,,21,,,,,,,,19,,21,,22,,,,,,,,21,,22,,23,,,,,,,,22,,23,,24,,,,24,,,,24,,,,],[,,17,,17,,17,,17,,17,,17,,17,,17,,17,,17,,17,,17,,19,,19,,19,,19,,19,,19,,19,,19,,19,,22,,22,,22,,],[,,24,,24,,24,,24,,24,,24,,25,,25,,25,,25,,25,,25,,26,,26,,26,,26,,26,,26,,28,,28,,28,,28,,28,,28,,],[1,,17,,,,,,,,,,17,,17,,,,17,,,,,,,,17,,,,,,,,,,17,,17,,,,17,,,,17,,,,],[2,,,,,,,,29,,,,,,,,,,,,29,,,,,,,,,,,,29,,,,,,,,,,,,29,,,,29,29],[5,,17,,,,,,16,,,,,,17,,,,,,19,,,,,,21,,,,,,17,,,,,,14,,,,,,12,,,,,,],[3,,33,,34,,33,,31,,33,,31,,29,,,,,,,,31,,33,,31,,,,,,,,26,,28,,29,,,,,,31,,,,,,]],[[4,,19,,,,14,,,,19,,17,,19,,,,14,,,,19,,17,,15,,,,10,,,,15,,14,,15,,,,10,,,,15,,17,,],[,,22,,,,22,,22,,,,22,,22,,,,22,,22,,,,22,,22,,,,22,,22,,,,22,,22,,,,22,,22,,,,22,,],[,,26,,,,26,,26,,,,26,,26,,,,26,,26,,,,26,,26,,,,26,,26,,,,26,,26,,,,26,,26,,,,26,,],[1,,17,,,,,,,,,,,,,,,,,,,,,,,,17,,,,,,,,,,,,,,,,,,,,,,,,],[2,,29,,,,,,,,,,,,,,,,,,,,,,29,29,29,,,,,,,,,,,,,,,,,,,,,,29,29],[5,,19,,,,,,14,,,,,,10,,,,,,19,,,,,,15,,,,,,17,,,,,,15,,,,,,14,,,,,,],[3,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,],[6,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,29,,],[7,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,]],[[4,,19,,,,14,,,,19,,17,,19,,,,14,,,,19,,17,,15,,,,10,,,,15,,14,,12,,,,12,,,,14,,16,,],[,,22,,,,22,,22,,,,22,,22,,,,22,,22,,,,22,,22,,,,22,,22,,,,22,,22,,22,,22,,22,,22,,22,,],[,,26,,,,26,,26,,,,26,,26,,,,26,,26,,,,26,,26,,,,26,,26,,,,26,,29,,29,,29,,28,,28,,28,,],[1,,17,,,,,,,,,,,,,,,,,,,,,,,,17,,,,,,,,,,,,17,,,,,,17,,17,,17,,],[2,,29,,,,,,,,,,,,,,,,,,,,,,29,29,29,,,,,,,,,,29,29,29,,,,,,29,,29,,29,29],[5,,19,,,,,,14,,,,,,10,,,,,,19,,,,,,15,,,,,,17,,,,,,19,,,,,,17,,,,,,],[3,,33,,29,,31,,26,,29,,24,,26,,,,,,,,36,,34,,33,,,,,,,,,,34,,33,,,,,,31,,,,,,],[6,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,,,,,29,,29,,],[7,,29,,,,29,,29,,,,29,,29,,,,29,,29,,,,29,,29,,,,29,,29,,,,29,,29,,,,29,,29,,29,,29,,]],[[4,,17,,,,,,,,17,,16,,14,,,,,,,,14,,17,,19,,,,,,,,19,,17,,16,,,,,,16,,17,,19,,],[,,21,,21,,21,,21,,21,,21,,17,,17,,17,,17,,17,,17,,22,,22,,22,,22,,22,,22,,19,,19,,19,,19,,19,,19,,],[,,24,,24,,24,,24,,24,,24,,21,,21,,21,,21,,21,,21,,26,,26,,26,,26,,26,,26,,24,,24,,24,,24,,24,,24,,],[1,,17,,,,,,,,,,17,,17,,,,17,,,,,,,,17,,,,,,,,,,17,,17,,,,17,,,,,,17,,],[2,,,,,,,,29,,,,,,,,,,,,29,,,,,,,,,,,,29,,,,,,,,,,,,29,,,,,,]]],[6,6,1,0,2,3,4,4,5],,{"title":"UniWop 3","instruments":["Piano","Kick","Snare","Lead","Bass","Flute","Shaker","Hihat"],"patterns":["Main 2","Main 1","Lead 1","Lead 2","Bridge 1","Bridge 2","Pattern 6"]}]),
 
-      drop = [,,471,.01,.03,.06,1,2.7,32,,,,,,,,,.97,.03],
+      splash = zzfxM(...[[[.5,0,124,,.04,.4,3],[1.5,0,31,,,.2,3,5],[1.5,0,655,,,.09,3,1.65,,,,,.02,3.8,-0.1,,.2],[.8,0,247,,.1,.48,3,,,,,,,,,.02,.09,,,.3]],[[[1,,5,,,,,,5,,5,,,,,,,,5,,,,,,5,,5,,,,,,,,7,,,,,,7,,7,,,,,,,,12,,,,,,12,,12,,,,12,,,,],[,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,],[,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,14,,14,,14,,14,,14,,14,,14,,14,,16,,16,,16,,16,,16,,16,,16,,16,,],[2,,,,,,,,,,,,,,17,,,,,,,,,,,,,,17,,17,,17,,,,,,,,,,,,,,17,,,,,,,,,,,,,,17,17,17,,17,17]],[[1,,5,,,,,,5,,5,,,,,,,,5,,,,,,5,,5,,,,,,,,7,,,,,,7,,7,,,,,,,,12,,,,,,12,,12,,,,12,,,,],[,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,9,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,10,,],[,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,14,,14,,14,,14,,14,,14,,14,,14,,16,,16,,16,,16,,16,,16,,16,,16,,],[2,,,,,,,,,,,,,,17,,,,,,,,,,,,,,17,,17,,17,,,,,,,,,,,,,,17,,,,,,,,,,,,,,17,17,17,,17,17],[3,,19,,,,,,17,,17,,,,,,16,,16,,,,,,14,,14,,,,,,,,12,,,,,,10,,10,,,,,,9,,9,,,,12,,,,9,,7,,,,,,]],[[1,,9,,,,,,9,,9,,,,,,,,9,,16,,,,9,,9,,11,,13,,,,14,,,,,,14,,14,,,,,,,,14,,21,,,,14,,14,,16,,18,,,,],[,,13,,13,,13,,13,,13,,13,,13,,13,,13,,13,,13,,13,,13,,13,,13,,13,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,12,,],[,,16,,16,,16,,16,,16,,16,,16,,16,,16,,16,,16,,16,,16,,16,,16,,16,,18,,18,,18,,18,,18,,18,,18,,18,,18,,18,,18,,18,,18,,18,,18,,18,,],[2,,,,,,,,,,,,,,17,,,,,,,,,,,,,,17,,17,,17,,,,,,,,,,,,,,17,,,,,,,,,,,,,,17,17,17,,17,17],[3,,19,,,,,,16,,16,,,,,,15,,16,,,,21,,,,,,,,16,,,,19,,,,,,18,,18,,,,,,17,,18,,,,,,,,,,,,,,,,]],[[1,,7,,,,,,7,,7,,,,,,,,7,,14,,,,7,,7,,9,,11,,,,10,,,,,,10,,10,,,,,,,,12,,7,,,,12,,12,,14,,16,,,,],[,,11,,11,,11,,11,,11,,11,,11,,11,,11,,11,,11,,11,,11,,11,,11,,11,,14,,14,,14,,14,,14,,14,,14,,14,,16,,16,,16,,16,,16,,16,,16,,16,,],[,,14,,14,,14,,14,,14,,14,,14,,14,,14,,14,,14,,14,,14,,14,,14,,14,,17,,17,,17,,17,,17,,17,,17,,17,,19,,19,,19,,19,,19,,19,,19,,19,,],[2,,,,,,,,,,,,,,17,,,,,,,,,,,,,,17,,17,,17,,,,,,,,,,,,,,17,,,,,,,,,,,,,,17,17,17,,17,17],[3,,17,,,,,,14,,14,,,,,,13,,14,,,,7,,,,11,,12,,14,,,,12,,,,,,14,,10,,,,,,12,,9,,,,12,,,,9,,7,,,,,,]]],[0,0,1,1,2,3],,{"title":"UniSplash","instruments":["Piano","Dig Dug","Snare","Korg Filter"],"patterns":["Intro","Melody","Bridge 1","Bridge 2"]}]),
 
-      flies = [,,160,.04,.3,.6,5,.2,,,,,,.2,,,,.38,.2,.3],
+      // Sound effects
+      caught = [1.5, , 365, .01, .11, .05, , 2.2, , -48, , , , .1, , .1, .16, .71, .05, , 389],
+
+      drop = [, , 471, .01, .03, .06, 1, 2.7, 32, , , , , , , , , .97, .03],
+
+      flies = [, , 160, .04, .3, .6, 5, .2, , , , , , .2, , , , .38, .2, .3],
 
       scoop = [, , 120, .02, .25, .13, 4, 3.3, 15, , 20, .2, .01, .3, 35, , , .58, .06, .31],
 
-      serve = [.8,,624,,.04,.08,,.2,,,255,.07,.07,,,,.06,.84,.05,,-1208],
+      serve = [.8, , 624, , .04, .08, , .2, , , 255, .07, .07, , , , .06, .84, .05, , -1208],
 
       wrong = [,,136,.01,.07,.15,3,1.3,-3,,,,,.5,1,.1,,.99,.06];
 
@@ -1827,9 +1833,11 @@
       caught,
       drop,
       flies,
+      over,
       scoop,
       serve,
       song,
+      splash,
       wrong,
       zzfx,
       zzfxP
@@ -1863,7 +1871,7 @@
       BOUNCE_SPEED = 10,
       BREAK_MESSAGES = ['HUNGRY CUSTOMERS INCOMING. GET READY TO SCOOP THAT POOP!', 'FRESH POOP. HUNGRY CUSTOMERS. TASTE THE RAINBOW.', 'BUSINESS IS BOOMIN’ UNICORNS ARE POOPIN’ TIME TO GET SCOOPIN’'],
       BROWN = ['#8B5A2B', '#4A2E12'],
-      CODE_BROWN = 'WE’VE GOT A CODE BROWN!',
+      CODE_BROWN = ['WE’VE GOT A CODE BROWN!', 'WE DON’T SERVE CHOCOLATE!'],
       // Indices: 0 BACKGROUND, 1 CLIPBOARD, 2 CONE, 3 COUNTER_BASE, 4 COUNTER_TOP, 5 FLOOR, 6 GREY, 7 WHITE, 8 BLACK
       COLORS = [
           '#866F9B',
@@ -1918,7 +1926,8 @@
       FLY_HOVER_TIME = 3,
       FLY_MIN_ROUND = 3,
       FLY_SPEED = 70,
-      GAME_OVER_DURATION = 12,
+      GAME_OVER = ['THE POOP HAS HIT THE FAN!', 'THAT’S ONE WAY TO FLUSH A CAREER!', 'WELL, THAT STINKS!'],
+      GAME_OVER_DURATION = 18,
       INSPECTOR_CATCH_R = 24,
       INSPECTOR_COOLDOWN = 20,
       PICKUP_R = 42,
@@ -1956,7 +1965,7 @@
           y: UNICORN_Y
       })),
       // Shared factory for UI text entries: defaults to white fill + centered anchor
-      uiText = (opts) => factory$7({
+      uiText = () => factory$7({
           anchor: {
               x: 0.5,
               y: 0.5
@@ -1966,43 +1975,48 @@
           textAlign: 'center',
           width: canvas.width - 20,
           x: canvas.width / 2,
-          y: canvas.height - COUNTER_BASE_H / 2,
-          ...opts
+          y: canvas.height - COUNTER_BASE_H / 2
       }),
       game = {
           loop: null,
           muted: false,
           started: false,
           ui: {
-              break: uiText({
-                  text: BREAK_MESSAGES[0]
-              }),
-              over: uiText({
-                  text: 'THAT’S ONE WAY TO FLUSH A CAREER! PRESS N TO SCOOP AGAIN'
-              }),
-              status: uiText({
-                  text: ''
-              })
+              break: uiText(),
+              over: uiText(),
+              status: uiText()
           }
       },
       // Music controller to manage background music playback
       music = (function () {
-          let player = null;
+          let
+              player = null,
+              track = null;
 
           return {
-              start () {
-                  if (player) {
-                      player.start();
-                  } else {
-                      player = audio.zzfxP(...audio.song);
-                      player.loop = true;
+              play (name, loop = true) {
+                  if (track === name) {
+                      if (player) {
+                          player.start();
+                      }
+
+                      return;
                   }
+
+                  if (player) {
+                      player.stop();
+                  }
+
+                  track = name;
+                  player = audio.zzfxP(...audio[name]);
+                  player.loop = loop;
               },
               stop () {
                   if (player) {
                       player.stop();
                   }
                   player = null;
+                  track = null;
               }
           };
       }()),
@@ -2166,25 +2180,42 @@
   }
 
   // Draws simple eyes and a mouth matching an emoticon-style expression (":)", ":D", ":}", ":|", ":(")
-  function drawFace (ctx, y, r, expression) {
+  function drawFace (ctx, y, r, expression, hasMustache) {
       const
           eyeOffsetX = r * 0.4,
           eyeR = max(1, r * 0.12),
           eyeY = y - r * 0.15,
           mouthW = r * 0.45,
-          mouthY = y + r * 0.25;
+          mouthY = y + r * 0.25,
+          mustacheHalfW = r * 0.75,
+          mustacheH = r * 0.36,
+          mustacheTipY = mouthY - r * (expression === 'delighted' ? 0.30 : 0.15),
+          mustacheBaseY = mustacheTipY + mustacheH;
 
+      // Eyes
       ctx.fillStyle = COLORS[6];
       ctx.beginPath();
       ctx.arc(-eyeOffsetX, eyeY, eyeR, 0, TAU);
       ctx.arc(eyeOffsetX, eyeY, eyeR, 0, TAU);
       ctx.fill();
 
+      if (hasMustache) {
+          // Mustache: wide, short filled triangle with the tip under the nose and sides sticking out
+          ctx.beginPath();
+          ctx.moveTo(0, mustacheTipY);
+          ctx.lineTo(-mustacheHalfW, mustacheBaseY);
+          ctx.lineTo(mustacheHalfW, mustacheBaseY);
+          ctx.closePath();
+          ctx.fill();
+      }
+
       ctx.strokeStyle = COLORS[6];
       ctx.lineWidth = 1.5;
       ctx.beginPath();
 
-      (FACES[expression] || FACES.neutral)(ctx, eyeOffsetX, eyeR, eyeY, mouthW, mouthY, r);
+      if (!hasMustache || expression === 'delighted') {
+          (FACES[expression] || FACES.neutral)(ctx, eyeOffsetX, eyeR, eyeY, mouthW, mouthY, r);
+      }
 
       ctx.stroke();
   }
@@ -2209,7 +2240,7 @@
   }
 
   // Draws a person shape (oval body + circle head) sized to fit within width/height, returns head position for further drawing
-  function drawPerson (ctx, width, height, color, stroke, expression) {
+  function drawPerson (ctx, width, height, color, stroke, expression, hasMustache) {
       const
           {
               bodyCenterY,
@@ -2229,7 +2260,7 @@
       ctx.arc(0, headCenterY, headR, 0, TAU);
       fillStroke(ctx);
 
-      drawFace(ctx, headCenterY, headR, expression);
+      drawFace(ctx, headCenterY, headR, expression, hasMustache);
 
       return {
           headCenterY,
@@ -2513,13 +2544,17 @@
           coneCenterY = (coneTopY + coneTipY) / 2;
       let rowY = boardY + rowH / 2;
 
-      // Shadow rectangle, offset for depth
-      ctx.fillStyle = COLORS[5];
-      ctx.fillRect(boardX - 3 + 6, boardY - 3 + 6, boardW + 6, boardH + 6);
+      // Drop shadow for depth
+      ctx.save();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetX = 6;
+      ctx.shadowOffsetY = 6;
 
       // Board frame
       ctx.fillStyle = fontColor;
       ctx.fillRect(boardX - 3, boardY - 3, boardW + 6, boardH + 6);
+      ctx.restore();
       ctx.fillStyle = COLORS[7];
       ctx.fillRect(boardX, boardY, boardW, boardH);
 
@@ -2651,6 +2686,9 @@
       game.customers = [];
       game.inspector = null;
       game.inspectorCooldown = INSPECTOR_COOLDOWN;
+      game.flies = null;
+      game.statusTimer = 0;
+      game.ui.status.text = '';
       game.onBreak = true;
       game.breakTimer = 7;
       game.roundColor = roundColor();
@@ -2754,10 +2792,13 @@
       if (!game.started) {
           game.started = true;
           if (!game.muted) {
-              music.start();
+              music.play('song');
           }
       } else if (game.over) {
           resetGame();
+          if (!game.muted) {
+              music.play('song', false);
+          }
       }
   }
 
@@ -2809,7 +2850,7 @@
       const
           height = 60 + rnd() * 18,
           multiplier = 1 + 0.1 * min(game.round - 1, 9),
-          speed = (35 + rnd() * 20) * multiplier,
+          speed = (45 + rnd() * 20) * multiplier,
           wants = pickWantColors(rollScoopCount());
 
       game.customers.push(factory$8({
@@ -2864,8 +2905,9 @@
 
       if (game.muted) {
           music.stop();
-      } else if (game.started) {
-          music.start();
+      } else {
+          // eslint-disable-next-line no-negated-condition, no-nested-ternary
+          music.play(!game.started ? 'splash' : game.over ? 'over' : 'song', !game.over);
       }
   }
 
@@ -2931,7 +2973,7 @@
 
           if (isBadScoop) {
               game.poopCooldown = POOP_SERVE_COOLDOWN;
-              showStatus(CODE_BROWN);
+              showStatus(CODE_BROWN[floor(rnd() * CODE_BROWN.length)]);
           }
       }
   }
@@ -3013,7 +3055,7 @@
               y: rnd() < 0.5 ? UNICORN_Y + PLAYER_REACH_Y : PLAYER_MAX_Y,
               yDir: rnd() < 0.5 ? 1 : -1
           });
-          showStatus('IT’S THE HEALTH INSPECTOR! EVERYONE ACT NORMAL');
+          showStatus('UH-OH! THE HEALTH INSPECTOR IS HERE!');
       }
   }
 
@@ -3055,7 +3097,7 @@
           };
 
           game.flies.radius = max(...game.flies.dots.map((d) => d.r));
-          showStatus('OH CRAP. WE’VE GOT FLIES!');
+          showStatus('OH NO! WE’RE ATTRACTING FLIES!');
           soundFx('flies');
       }
   }
@@ -3091,7 +3133,7 @@
           const {
               headCenterY,
               headR
-          } = drawPerson(this.context, this.width, this.height, this.color, COLORS[6], this.deliverTimer > 0 ? 'delighted' : 'happy');
+          } = drawPerson(this.context, this.width, this.height, this.color, COLORS[6], this.deliverTimer > 0 ? 'delighted' : 'happy', true);
 
           drawSodaJerkHat(this.context, headCenterY, headR);
           drawBowTie(this.context, headCenterY, headR);
@@ -3333,6 +3375,9 @@
               if (game.overTimer <= 0) {
                   resetGame();
                   game.started = false;
+                  if (!game.muted) {
+                      music.play('splash');
+                  }
               }
 
               return;
@@ -3344,8 +3389,6 @@
               if (game.breakTimer <= 0) {
                   game.onBreak = false;
               }
-
-              return;
           }
 
 
@@ -3418,7 +3461,7 @@
           spawnTimer += dt;
           game.elapsed += dt;
 
-          if (game.customers.length < game.maxAtOnce && spawnTimer > spawnInterval) {
+          if (!game.onBreak && game.customers.length < game.maxAtOnce && spawnTimer > spawnInterval) {
               spawnTimer = 0;
               spawnCustomer();
           }
@@ -3454,7 +3497,9 @@
           }
 
           // Spawn and move the health inspector
-          trySpawnInspector(dt);
+          if (!game.onBreak) {
+              trySpawnInspector(dt);
+          }
 
           if (game.inspector) {
               const
@@ -3496,7 +3541,7 @@
                   }
 
                   setScore(game.score - 3);
-                  addReceiptItem('Cleaning Fee', -3);
+                  addReceiptItem('Sanitation Violation', -3);
                   inspector.annoyedTimer = 2 + rnd();
 
                   return false;
@@ -3505,9 +3550,9 @@
               // Catch the player: fine them $10 and confiscate their carried scoop
               if (dist(game.player, inspector) < INSPECTOR_CATCH_R && game.carrying.length > 0) {
                   game.carrying = [];
-                  addReceiptItem('Notice of Violation', -10);
+                  addReceiptItem('Food Safety Violation', -10);
                   setScore(game.score - 10);
-                  showStatus('YOU’RE IN DEEP DOO-DOO NOW!');
+                  showStatus('VIOLATION! THIS DOO ISN’T FDA APPROVED!');
                   soundFx('caught');
 
                   game.inspector = null;
@@ -3523,7 +3568,9 @@
           }
 
           // Move/update the fly swarm: seek the next un-visited spill, hover over it, then despawn off-screen
-          trySpawnFlies(dt);
+          if (!game.onBreak) {
+              trySpawnFlies(dt);
+          }
 
           if (game.flies) {
               const swarm = game.flies;
@@ -3569,7 +3616,7 @@
               if (game.carrying.length && game.carrying[game.carrying.length - 1] !== BROWN && dist(game.player, swarm) < FLY_CATCH_R + swarm.radius + game.player.width / 2) {
                   game.carrying[game.carrying.length - 1] = BROWN;
                   soundFx('flies');
-                  showStatus(CODE_BROWN);
+                  showStatus(CODE_BROWN[floor(rnd() * CODE_BROWN.length)]);
               }
 
               // Despawn once it has drifted off the left edge with nowhere left to go
@@ -3579,12 +3626,14 @@
               }
           }
 
-
           // Losing a single customer past the counter ends the game
           if (game.customers.some((c) => !c.served && c.x <= -20)) {
               game.over = true;
               game.overTimer = GAME_OVER_DURATION;
-              music.stop();
+              game.ui.over.text = `${GAME_OVER[floor(rnd() * GAME_OVER.length)]} PRESS N TO SCOOP AGAIN`;
+              if (!game.muted) {
+                  music.play('over', false);
+              }
           } else {
               game.customers = game.customers.filter((c) => !c.served);
           }
